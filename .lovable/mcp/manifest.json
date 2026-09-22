@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://uwioavplepezwbhituqr.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "eduverse-ai-explorer",
+      "version": "0.1.0",
+      "title": "EduVerse AI Explorer"
+    },
+    "tools": [
+      {
+        "name": "get_learning_overview",
+        "title": "Get learning overview",
+        "description": "Get the signed-in learner's profile, streak, and overall module progress in EduVerse.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_concept_progress",
+        "title": "List concept progress",
+        "description": "List the signed-in learner's adaptive concept progress (quiz score, attempts, time spent, status), optionally filtered by status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Optional status filter, e.g. 'completed', 'in_progress', 'not_started'."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum rows to return (default 25, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_chapter_content",
+        "title": "Get chapter content",
+        "description": "Look up EduVerse chapter content (concepts and study material) available to the signed-in learner.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Optional text to match against chapter titles."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum chapters to return (default 5, max 20)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "log_learning_progress",
+        "title": "Log learning progress",
+        "description": "Record or update the signed-in learner's progress on a module topic in EduVerse.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "module": {
+              "type": "string",
+              "description": "Module name, e.g. 'AI Tutor' or 'AR Learning'."
+            },
+            "topic": {
+              "type": "string",
+              "description": "Topic within the module."
+            },
+            "progress": {
+              "type": "number",
+              "description": "Progress percentage from 0 to 100."
+            },
+            "status": {
+              "type": "string",
+              "description": "Optional status, e.g. 'in_progress' or 'completed'. Defaults from progress."
+            }
+          },
+          "required": [
+            "module",
+            "topic",
+            "progress"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

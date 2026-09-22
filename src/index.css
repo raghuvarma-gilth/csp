@@ -1,0 +1,306 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================================================
+   EduVerse design system
+   ---------------------------------------------------------------------------
+   One palette, defined once, in HSL. The previous theme declared a green
+   --primary while every gradient painted purple, and --muted-foreground was
+   darker than --muted, which made secondary text unreadable. Both are fixed
+   here: ink-and-indigo for structure, teal for progress, amber for attention.
+
+   Contrast targets: body text >= 7:1 on --background, muted text >= 4.5:1.
+   =========================================================================== */
+
+@layer base {
+  :root {
+    --background: 220 33% 98%;
+    --foreground: 224 39% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 39% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 39% 12%;
+
+    /* Indigo — structure, navigation, primary action */
+    --primary: 243 75% 56%;
+    --primary-light: 243 80% 68%;
+    --primary-dark: 243 66% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Teal — mastery and forward progress */
+    --accent: 173 80% 36%;
+    --accent-light: 173 70% 46%;
+    --accent-foreground: 0 0% 100%;
+
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 224 30% 20%;
+
+    --muted: 220 20% 95%;
+    --muted-foreground: 220 12% 42%;
+
+    --success: 152 62% 36%;
+    --success-light: 152 55% 46%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 35 92% 46%;
+    --warning-light: 38 95% 56%;
+    --warning-foreground: 30 60% 12%;
+
+    --info: 205 85% 45%;
+    --info-light: 205 85% 56%;
+    --info-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 16% 88%;
+    --input: 220 16% 88%;
+    --ring: 243 75% 56%;
+
+    --radius: 0.75rem;
+
+    /* Mastery scale — used by the Learning DNA map and every progress bar */
+    --mastery-none: 220 14% 80%;
+    --mastery-low: 0 72% 55%;
+    --mastery-mid: 35 92% 50%;
+    --mastery-high: 173 70% 40%;
+    --mastery-full: 152 62% 38%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(243 75% 56%) 0%, hsl(262 72% 58%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(173 80% 36%) 0%, hsl(190 80% 42%) 100%);
+    --gradient-hero: linear-gradient(140deg, hsl(243 75% 56%) 0%, hsl(262 72% 54%) 45%, hsl(190 80% 42%) 100%);
+
+    --shadow-elevation: 0 1px 2px hsl(224 39% 12% / 0.04), 0 8px 24px -12px hsl(224 39% 12% / 0.18);
+    --shadow-primary: 0 10px 30px -12px hsl(243 75% 56% / 0.45);
+    --shadow-accent: 0 10px 30px -12px hsl(173 80% 36% / 0.4);
+
+    --chart-1: 243 75% 56%;
+    --chart-2: 173 80% 36%;
+    --chart-3: 35 92% 50%;
+    --chart-4: 205 85% 45%;
+    --chart-5: 330 70% 55%;
+
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 224 39% 12%;
+    --sidebar-primary: 243 75% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 95%;
+    --sidebar-accent-foreground: 224 30% 20%;
+    --sidebar-border: 220 16% 88%;
+    --sidebar-ring: 243 75% 56%;
+
+    --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-serif: "Lora", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --shadow-2xs: 0 1px 2px 0 hsl(224 39% 12% / 0.04);
+    --shadow-xs: 0 1px 3px 0 hsl(224 39% 12% / 0.06);
+    --shadow-sm: 0 1px 3px 0 hsl(224 39% 12% / 0.08), 0 1px 2px -1px hsl(224 39% 12% / 0.08);
+    --shadow: 0 2px 6px -1px hsl(224 39% 12% / 0.08);
+    --shadow-md: 0 4px 12px -2px hsl(224 39% 12% / 0.1);
+    --shadow-lg: 0 10px 24px -6px hsl(224 39% 12% / 0.12);
+    --shadow-xl: 0 20px 40px -12px hsl(224 39% 12% / 0.16);
+    --shadow-2xl: 0 32px 64px -16px hsl(224 39% 12% / 0.24);
+
+    /* Opacity of the education-themed backdrop. Deliberately low — it must
+       never compete with text. */
+    --backdrop-opacity: 0.045;
+  }
+
+  .dark {
+    --background: 226 36% 7%;
+    --foreground: 220 20% 96%;
+
+    --card: 226 30% 11%;
+    --card-foreground: 220 20% 96%;
+
+    --popover: 226 30% 11%;
+    --popover-foreground: 220 20% 96%;
+
+    --primary: 243 85% 72%;
+    --primary-light: 243 90% 80%;
+    --primary-dark: 243 70% 58%;
+    --primary-foreground: 226 45% 10%;
+
+    --accent: 172 70% 48%;
+    --accent-light: 172 70% 60%;
+    --accent-foreground: 190 90% 8%;
+
+    --secondary: 226 22% 17%;
+    --secondary-foreground: 220 20% 92%;
+
+    --muted: 226 22% 16%;
+    --muted-foreground: 220 14% 68%;
+
+    --success: 152 58% 48%;
+    --success-light: 152 58% 58%;
+    --success-foreground: 150 60% 8%;
+
+    --warning: 38 92% 58%;
+    --warning-light: 42 95% 66%;
+    --warning-foreground: 30 60% 10%;
+
+    --info: 205 85% 62%;
+    --info-light: 205 85% 72%;
+    --info-foreground: 205 70% 10%;
+
+    --destructive: 0 72% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 226 20% 22%;
+    --input: 226 20% 22%;
+    --ring: 243 85% 72%;
+
+    --mastery-none: 226 14% 32%;
+    --mastery-low: 0 70% 62%;
+    --mastery-mid: 38 92% 58%;
+    --mastery-high: 172 65% 52%;
+    --mastery-full: 152 58% 50%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(243 85% 68%) 0%, hsl(262 80% 68%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(172 70% 48%) 0%, hsl(190 75% 52%) 100%);
+    --gradient-hero: linear-gradient(140deg, hsl(243 85% 66%) 0%, hsl(262 80% 64%) 45%, hsl(188 78% 50%) 100%);
+
+    --shadow-elevation: 0 1px 2px hsl(0 0% 0% / 0.3), 0 12px 32px -16px hsl(0 0% 0% / 0.7);
+    --shadow-primary: 0 10px 30px -12px hsl(243 85% 66% / 0.5);
+    --shadow-accent: 0 10px 30px -12px hsl(172 70% 48% / 0.45);
+
+    --chart-1: 243 85% 72%;
+    --chart-2: 172 70% 52%;
+    --chart-3: 38 92% 60%;
+    --chart-4: 205 85% 64%;
+    --chart-5: 330 75% 68%;
+
+    --sidebar: 226 30% 10%;
+    --sidebar-foreground: 220 20% 96%;
+    --sidebar-primary: 243 85% 72%;
+    --sidebar-primary-foreground: 226 45% 10%;
+    --sidebar-accent: 226 22% 17%;
+    --sidebar-accent-foreground: 220 20% 92%;
+    --sidebar-border: 226 20% 22%;
+    --sidebar-ring: 243 85% 72%;
+
+    --backdrop-opacity: 0.07;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  /* Visible focus for keyboard users on every interactive element. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.22);
+  }
+}
+
+@layer components {
+  /* Long-form lesson text. Serif at a comfortable measure — this is the one
+     place in the app people actually read paragraphs. */
+  .lesson-prose {
+    @apply text-[1.0625rem] leading-[1.75] text-foreground/90;
+    font-family: var(--font-serif);
+  }
+  .lesson-prose h1 { @apply mb-4 mt-8 font-sans text-2xl font-semibold text-foreground; }
+  .lesson-prose h2 { @apply mb-3 mt-8 font-sans text-xl font-semibold text-foreground; }
+  .lesson-prose h3 { @apply mb-2 mt-6 font-sans text-lg font-semibold text-foreground; }
+  .lesson-prose p { @apply mb-4; }
+  .lesson-prose ul { @apply mb-4 list-disc space-y-1.5 pl-6; }
+  .lesson-prose ol { @apply mb-4 list-decimal space-y-1.5 pl-6; }
+  .lesson-prose strong { @apply font-semibold text-foreground; }
+  .lesson-prose a { @apply text-primary underline underline-offset-4; }
+  .lesson-prose blockquote {
+    @apply my-4 border-l-4 border-primary/40 bg-primary/5 py-2 pl-4 pr-3 not-italic;
+  }
+  .lesson-prose code {
+    @apply rounded bg-muted px-1.5 py-0.5 text-[0.85em] font-medium text-foreground;
+    font-family: var(--font-mono);
+  }
+  .lesson-prose pre {
+    @apply my-5 overflow-x-auto rounded-xl border border-border bg-[hsl(226_36%_9%)] p-4 text-sm leading-relaxed text-[hsl(220_20%_92%)];
+    font-family: var(--font-mono);
+  }
+  .lesson-prose pre code {
+    @apply bg-transparent p-0 text-inherit;
+  }
+  .lesson-prose table { @apply my-4 w-full border-collapse text-sm font-sans; }
+  .lesson-prose th, .lesson-prose td { @apply border border-border px-3 py-2 text-left; }
+  .lesson-prose th { @apply bg-muted font-semibold; }
+
+  .surface-card {
+    @apply rounded-2xl border border-border bg-card/80 backdrop-blur-sm;
+    box-shadow: var(--shadow-elevation);
+  }
+}
+
+@layer utilities {
+  .gradient-primary { background-image: var(--gradient-primary); }
+  .gradient-accent { background-image: var(--gradient-accent); }
+  .gradient-hero { background-image: var(--gradient-hero); }
+
+  .text-gradient {
+    background-image: var(--gradient-hero);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .shadow-primary { box-shadow: var(--shadow-primary); }
+  .shadow-accent { box-shadow: var(--shadow-accent); }
+  .shadow-elevation { box-shadow: var(--shadow-elevation); }
+
+  .animate-float { animation: eduverse-float 7s ease-in-out infinite; }
+  .animate-drift { animation: eduverse-drift 90s linear infinite; }
+  .animate-rise { animation: eduverse-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  @keyframes eduverse-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
+  }
+
+  @keyframes eduverse-drift {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
+  }
+
+  @keyframes eduverse-rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* Respect the OS setting — motion here is decorative, never informative. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float,
+    .animate-drift,
+    .animate-rise,
+    .animate-pulse {
+      animation: none !important;
+    }
+    html { scroll-behavior: auto; }
+  }
+}

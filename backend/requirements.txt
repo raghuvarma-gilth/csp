@@ -1,0 +1,13 @@
+# EduVerse backend — FastAPI
+#
+# Deliberately small. Every heavy dependency is one the server genuinely needs:
+# there is no ORM (PostgREST is the database interface), no LLM SDK (Gemini and
+# Hugging Face are plain HTTPS), and no task queue.
+
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+httpx==0.28.1
+pydantic==2.11.9
+pydantic-settings==2.11.0
+python-dotenv==1.1.1
+python-multipart==0.0.20

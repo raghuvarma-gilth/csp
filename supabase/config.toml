@@ -1,0 +1,29 @@
+project_id = "hhzbofpaomaxwsdwnwjr"
+
+# Every function below reads or writes a specific student's learning record,
+# so all of them require a verified Supabase JWT. The function then resolves
+# the caller from that token — it never trusts a user_id sent in the body.
+
+[functions.aiva-chat]
+verify_jwt = true
+
+[functions.rag-ingest]
+verify_jwt = true
+
+[functions.rag-search]
+verify_jwt = true
+
+[functions.quiz-start]
+verify_jwt = true
+
+[functions.quiz-submit]
+verify_jwt = true
+
+[functions.code-grade]
+verify_jwt = true
+
+[functions.learning-plan]
+verify_jwt = true
+
+[functions.diagnostic]
+verify_jwt = true
