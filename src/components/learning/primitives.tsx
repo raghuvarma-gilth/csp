@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ModuleCover, moduleArt } from "@/components/learning/moduleArt";
 import { cn } from "@/lib/utils";
 import {
   ACTION_LABEL,
@@ -87,6 +88,80 @@ export const MasteryBar = ({
           />
         ) : null}
       </div>
+    </div>
+  );
+};
+
+/**
+ * A count drawn as a ring, for module progress.
+ *
+ * `value` and `secondary` are fractions between 0 and 1 and must both come from
+ * counting real rows — how many concepts in this module are at 60%+, and how
+ * many have been attempted at all. The ring deliberately does not average
+ * mastery across the module, because an unmeasured concept has no score to
+ * average in and treating it as a zero would turn "not started" into "failed".
+ */
+export const ProgressRing = ({
+  value,
+  secondary = 0,
+  size = 52,
+  label,
+  className,
+}: {
+  value: number;
+  secondary?: number;
+  size?: number;
+  label?: ReactNode;
+  className?: string;
+}) => {
+  const stroke = size >= 64 ? 5 : 4;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clamp = (input: number) => Math.min(Math.max(input, 0), 1);
+
+  return (
+    <div className={cn("relative shrink-0", className)} style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          strokeWidth={stroke}
+          className="stroke-muted"
+        />
+        {secondary > 0 ? (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - clamp(secondary))}
+            className="stroke-primary/25"
+          />
+        ) : null}
+        {value > 0 ? (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - clamp(value))}
+            className="stroke-primary transition-[stroke-dashoffset] duration-700"
+          />
+        ) : null}
+      </svg>
+      {label ? (
+        <span className="absolute inset-0 grid place-items-center text-[11px] font-semibold tabular-nums">
+          {label}
+        </span>
+      ) : null}
     </div>
   );
 };
@@ -177,6 +252,91 @@ export const ConceptCard = ({
   );
 
   return locked ? <div aria-disabled>{body}</div> : <Link to={`/learn/${slug}`}>{body}</Link>;
+};
+
+/**
+ * One module in a course — a chapter, presented as a destination of its own
+ * rather than an accordion row. Cover art and icon come from the slug, so a
+ * module created next week looks as finished as the ones seeded today.
+ */
+export const ModuleCard = ({
+  href,
+  slug,
+  position,
+  title,
+  description,
+  conceptCount,
+  confident,
+  started,
+  minutes,
+}: {
+  href: string;
+  slug: string;
+  position: number;
+  title: string;
+  description: string | null;
+  conceptCount: number;
+  /** Concepts in this module measured at 60% or better. A count, not an average. */
+  confident: number;
+  /** Concepts attempted at least once. */
+  started: number;
+  minutes: number;
+}) => {
+  const art = moduleArt(slug);
+  const Icon = art.icon;
+  const fraction = conceptCount > 0 ? confident / conceptCount : 0;
+
+  return (
+    <Link to={href} className="group block focus-visible:outline-none">
+      <Card className="surface-card h-full overflow-hidden transition-all group-hover:-translate-y-0.5 group-hover:shadow-elevation group-focus-visible:ring-2 group-focus-visible:ring-ring">
+        <ModuleCover slug={slug} className="h-16 border-b border-border/60" />
+        <CardContent className="flex h-full flex-col gap-3 p-4">
+          <div className="-mt-9 flex items-start justify-between gap-3">
+            <span
+              className={cn(
+                "grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border/60 bg-card shadow-sm",
+                art.cls.ink,
+              )}
+            >
+              <Icon className="h-5 w-5" aria-hidden />
+            </span>
+            <ProgressRing
+              value={fraction}
+              secondary={conceptCount > 0 ? started / conceptCount : 0}
+              label={
+                <span className={confident > 0 ? undefined : "text-muted-foreground"}>
+                  {confident}/{conceptCount}
+                </span>
+              }
+              className="mt-1"
+            />
+          </div>
+
+          <div className="min-w-0">
+            <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              Module {position}
+            </p>
+            <h3 className="text-[0.95rem] font-semibold leading-snug">{title}</h3>
+            {description ? (
+              <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{description}</p>
+            ) : null}
+          </div>
+
+          <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/60 pt-3 text-[11px] text-muted-foreground">
+            <span>
+              {conceptCount} concept{conceptCount === 1 ? "" : "s"}
+            </span>
+            <span aria-hidden>·</span>
+            <span>{minutes} min</span>
+            <span className="ml-auto inline-flex items-center gap-1 font-medium text-primary">
+              {started === 0 ? "Start" : confident === conceptCount ? "Review" : "Continue"}
+              <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
 };
 
 const ACTION_ROUTE: Record<string, (slug?: string | null) => string> = {

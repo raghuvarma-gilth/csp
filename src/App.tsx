@@ -44,6 +44,7 @@ const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const Home = lazy(() => import("./pages/Home"));
 const Learn = lazy(() => import("./pages/Learn"));
 const ConceptPage = lazy(() => import("./pages/ConceptPage"));
+const ModulePage = lazy(() => import("./pages/ModulePage"));
 const Roadmap = lazy(() => import("./pages/Roadmap"));
 const Practice = lazy(() => import("./pages/Practice"));
 const Tutor = lazy(() => import("./pages/Tutor"));
@@ -95,6 +96,10 @@ const App = () => (
                   <Route path="/home" element={<Home />} />
                   <Route path="/learn" element={<Learn />} />
                   <Route path="/learn/:conceptSlug" element={<ConceptPage />} />
+                  {/* Modules sit one level deeper because chapter slugs are only
+                      unique within a course — the course slug is part of the
+                      address, not decoration. */}
+                  <Route path="/learn/:courseSlug/:moduleSlug" element={<ModulePage />} />
                   <Route path="/roadmap" element={<Roadmap />} />
                   <Route path="/practice" element={<Practice />} />
                   <Route path="/practice/:conceptSlug" element={<Practice />} />
