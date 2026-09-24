@@ -6,7 +6,9 @@ import {
   Clock,
   Code2,
   GraduationCap,
+  Layers,
   Lightbulb,
+  List,
   MessageSquare,
   Shapes,
   Target,
@@ -17,15 +19,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { useConcept, useCurriculum, useMastery } from "@/hooks/useLearning";
 import { MasteryBar } from "@/components/learning/primitives";
-import { Markdown } from "@/components/learning/Markdown";
+import { Markdown, extractHeadings } from "@/components/learning/Markdown";
+import { moduleArt } from "@/components/learning/moduleArt";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { STATUS_LABEL, daysSince, decayRisk } from "@/lib/mastery";
+import { cn } from "@/lib/utils";
 
 /**
  * One concept: what it says, what it assumes, and what to do with it.
  *
  * The lesson body is rendered from markdown into React elements — never as raw
  * HTML — because this text comes from whatever a faculty member pasted.
+ *
+ * It renders in the `lesson` variant, which is the long-form reading style:
+ * serif at 17px, a measure capped near 68 characters, real tables, worked
+ * examples set apart from the prose, and figures drawn inline. The page used to
+ * pass `className="text-[0.95rem]"` and nothing else, so a lesson was rendered
+ * in the same cramped sans-serif as a chat bubble — which is the main reason
+ * reading one felt like reading a tooltip.
  *
  * The mastery panel shows either a real measurement or "Not started". There is
  * no third state where an untouched concept is drawn as 0%, which is what the
@@ -49,16 +60,25 @@ const ConceptPage = () => {
 
   const concept = query.data?.concept;
 
-  /** The next published concept in the same chapter, if there is one. */
-  const next = useMemo(() => {
-    if (!concept) return null;
+  /** The concepts either side of this one, within the same module. */
+  const neighbours = useMemo(() => {
+    if (!concept) return { previous: null, next: null, position: 0, total: 0 };
     const chapter = (curriculum.data ?? [])
       .flatMap((course) => course.chapters)
       .find((item) => item.id === concept.chapter_id);
-    if (!chapter) return null;
+    if (!chapter) return { previous: null, next: null, position: 0, total: 0 };
     const index = chapter.concepts.findIndex((item) => item.id === concept.id);
-    return index >= 0 ? chapter.concepts[index + 1] ?? null : null;
+    if (index < 0) return { previous: null, next: null, position: 0, total: chapter.concepts.length };
+    return {
+      previous: index > 0 ? chapter.concepts[index - 1] : null,
+      next: chapter.concepts[index + 1] ?? null,
+      position: index + 1,
+      total: chapter.concepts.length,
+    };
   }, [concept, curriculum.data]);
+
+  /** Headings in the lesson body, for the contents list in the sidebar. */
+  const headings = useMemo(() => extractHeadings(concept?.content ?? ""), [concept?.content]);
 
   if (query.isLoading) return <LoadingState label="Opening the concept…" />;
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
@@ -82,12 +102,19 @@ const ConceptPage = () => {
   const measured = (record?.attempts ?? 0) > 0;
   const risk = record ? decayRisk(record.peak_mastery, record.mastery, record.last_practiced_at) : 0;
 
-  const chapter = concept.chapters as { slug: string; title: string; courses: { slug: string; title: string } | null } | null;
+  const chapter = concept.chapters as {
+    slug: string;
+    title: string;
+    courses: { slug: string; title: string } | null;
+  } | null;
   const course = chapter?.courses ?? null;
+  const moduleHref = course && chapter ? `/learn/${course.slug}/${chapter.slug}` : "/learn";
+  const art = chapter ? moduleArt(chapter.slug) : null;
+  const ModuleIcon = art?.icon ?? Layers;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+      <nav className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground" aria-label="Breadcrumb">
         <Link to="/learn" className="inline-flex items-center gap-1 hover:text-foreground">
           <ArrowLeft className="h-3 w-3" aria-hidden />
           Curriculum
@@ -101,15 +128,43 @@ const ConceptPage = () => {
         {chapter ? (
           <>
             <span aria-hidden>/</span>
-            <span className="truncate">{chapter.title}</span>
+            <Link to={moduleHref} className="truncate hover:text-foreground">
+              {chapter.title}
+            </Link>
           </>
         ) : null}
-      </div>
+      </nav>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="min-w-0 space-y-6">
           <header>
-            <div className="mb-2 flex flex-wrap items-center gap-2">
+            {chapter ? (
+              <Link
+                to={moduleHref}
+                className={cn(
+                  "mb-3 inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] font-medium transition-colors hover:border-primary/40",
+                  art?.cls.ink,
+                )}
+              >
+                <ModuleIcon className="h-3.5 w-3.5" aria-hidden />
+                {chapter.title}
+                {neighbours.total > 0 ? (
+                  <span className="text-muted-foreground">
+                    · {neighbours.position} of {neighbours.total}
+                  </span>
+                ) : null}
+              </Link>
+            ) : null}
+
+            <h1 className="text-2xl font-bold tracking-tight sm:text-[2rem] sm:leading-tight">{concept.title}</h1>
+
+            {concept.summary ? (
+              <p className="mt-2.5 max-w-2xl font-serif text-base leading-relaxed text-muted-foreground">
+                {concept.summary}
+              </p>
+            ) : null}
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="text-[10px]">
                 Level {concept.difficulty} · {DIFFICULTY_LABEL[concept.difficulty] ?? "Unrated"}
               </Badge>
@@ -118,16 +173,10 @@ const ConceptPage = () => {
                 {concept.estimated_minutes} min read
               </span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{concept.title}</h1>
-            {concept.summary ? (
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                {concept.summary}
-              </p>
-            ) : null}
           </header>
 
           {objectives.length > 0 ? (
-            <Card className="surface-card border-primary/20">
+            <Card className="surface-card border-primary/20 bg-primary/[0.03]">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
                   <Target className="h-4 w-4 text-primary" aria-hidden />
@@ -135,7 +184,7 @@ const ConceptPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-1.5">
+                <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
                   {objectives.map((objective) => (
                     <li key={objective.id} className="flex gap-2 text-sm leading-relaxed">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
@@ -148,9 +197,9 @@ const ConceptPage = () => {
           ) : null}
 
           <Card className="surface-card">
-            <CardContent className="p-5 sm:p-6">
+            <CardContent className="px-5 py-6 sm:px-8 sm:py-8">
               {concept.content ? (
-                <Markdown content={concept.content} className="text-[0.95rem]" />
+                <Markdown content={concept.content} variant="lesson" className="max-w-[68ch]" />
               ) : (
                 <EmptyState
                   icon={<Lightbulb className="h-8 w-8" aria-hidden />}
@@ -184,29 +233,87 @@ const ConceptPage = () => {
             ) : null}
           </div>
 
-          {next ? (
+          {neighbours.previous || neighbours.next ? (
             <>
               <Separator />
-              <Link
-                to={`/learn/${next.slug}`}
-                className="group flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/60 p-4 transition-colors hover:border-primary/40"
-              >
-                <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Next in this chapter
-                  </p>
-                  <p className="truncate text-sm font-semibold">{next.title}</p>
-                </div>
-                <ArrowRight
-                  className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
-                  aria-hidden
-                />
-              </Link>
+              <nav className="grid gap-3 sm:grid-cols-2" aria-label="Other concepts in this module">
+                {neighbours.previous ? (
+                  <Link
+                    to={`/learn/${neighbours.previous.slug}`}
+                    className="group flex items-center gap-3 rounded-xl border border-border/70 bg-card/60 p-4 transition-colors hover:border-primary/40"
+                  >
+                    <ArrowLeft
+                      className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:-translate-x-0.5"
+                      aria-hidden
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Previous</p>
+                      <p className="truncate text-sm font-semibold">{neighbours.previous.title}</p>
+                    </div>
+                  </Link>
+                ) : (
+                  <span aria-hidden />
+                )}
+                {neighbours.next ? (
+                  <Link
+                    to={`/learn/${neighbours.next.slug}`}
+                    className="group flex items-center justify-end gap-3 rounded-xl border border-border/70 bg-card/60 p-4 text-right transition-colors hover:border-primary/40"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Next</p>
+                      <p className="truncate text-sm font-semibold">{neighbours.next.title}</p>
+                    </div>
+                    <ArrowRight
+                      className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
+                  </Link>
+                ) : (
+                  <Link
+                    to={moduleHref}
+                    className="group flex items-center justify-end gap-3 rounded-xl border border-border/70 bg-card/60 p-4 text-right transition-colors hover:border-primary/40"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Last in this module</p>
+                      <p className="truncate text-sm font-semibold">Back to {chapter?.title ?? "the module"}</p>
+                    </div>
+                    <Layers className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                  </Link>
+                )}
+              </nav>
             </>
           ) : null}
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+          {headings.length >= 2 ? (
+            <Card className="surface-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <List className="h-4 w-4" aria-hidden />
+                  On this page
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-1 border-l border-border">
+                  {headings.map((heading) => (
+                    <li key={heading.id}>
+                      <a
+                        href={`#${heading.id}`}
+                        className={cn(
+                          "-ml-px block border-l border-transparent py-1 text-xs leading-snug text-muted-foreground transition-colors hover:border-primary hover:text-foreground",
+                          heading.level >= 3 ? "pl-5" : "pl-3",
+                        )}
+                      >
+                        {heading.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ) : null}
+
           <Card className="surface-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Your mastery</CardTitle>

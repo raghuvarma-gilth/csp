@@ -86,6 +86,109 @@ export const useCurriculum = () =>
     },
   });
 
+export interface ModuleDetail {
+  course: { id: string; slug: string; code: string | null; title: string; description: string | null; subject: string };
+  module: { id: string; slug: string; title: string; description: string | null; position: number };
+  concepts: ConceptSummary[];
+  /** Every objective across the module's concepts, so the module can state its own outcomes. */
+  objectives: Array<{ id: string; concept_id: string; objective: string; position: number }>;
+  problems: Array<{ id: string; slug: string; title: string; difficulty: number; concept_id: string }>;
+  /** The other modules in the same course, in order, for previous/next navigation. */
+  siblings: Array<{ id: string; slug: string; title: string; position: number }>;
+}
+
+/**
+ * One module — a chapter, read as a destination of its own.
+ *
+ * Addressed by course slug *and* module slug because `chapters` is only
+ * UNIQUE (course_id, slug): two courses may both have a module called
+ * `introduction`, so a slug alone would be ambiguous the first time a second
+ * course is published.
+ *
+ * The module's stated outcomes are the objectives already attached to its
+ * concepts, gathered here rather than stored a second time. Duplicating them
+ * on the chapter row would create two versions of the same sentence that drift
+ * apart the moment somebody edits one.
+ */
+export const useModule = (courseSlug: string | undefined, moduleSlug: string | undefined) =>
+  useQuery({
+    queryKey: ["module", courseSlug, moduleSlug],
+    enabled: Boolean(courseSlug && moduleSlug),
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<ModuleDetail> => {
+      const { data: chapter, error: chapterError } = await supabase
+        .from("chapters")
+        .select(
+          "id, slug, title, description, position, course_id, courses!inner(id, slug, code, title, description, subject, status)",
+        )
+        .eq("slug", moduleSlug!)
+        .eq("status", "published")
+        .eq("courses.slug", courseSlug!)
+        .eq("courses.status", "published")
+        .maybeSingle();
+
+      if (chapterError) throw chapterError;
+      if (!chapter) throw new Error("That module could not be found, or it has not been published yet.");
+
+      const course = chapter.courses as unknown as ModuleDetail["course"];
+
+      const [{ data: concepts, error: conceptsError }, { data: siblings, error: siblingsError }] = await Promise.all([
+        supabase
+          .from("concepts")
+          .select("id, slug, title, summary, difficulty, estimated_minutes, visual_key, position, chapter_id")
+          .eq("chapter_id", chapter.id)
+          .eq("status", "published")
+          .order("position"),
+        supabase
+          .from("chapters")
+          .select("id, slug, title, position")
+          .eq("course_id", chapter.course_id)
+          .eq("status", "published")
+          .order("position"),
+      ]);
+
+      if (conceptsError) throw conceptsError;
+      if (siblingsError) throw siblingsError;
+
+      const conceptIds = (concepts ?? []).map((concept) => concept.id);
+
+      // `.in()` on an empty list is a query with no possible result, so skip it
+      // rather than ask the server a question with a known answer.
+      const [objectives, problems] = conceptIds.length
+        ? await Promise.all([
+            supabase
+              .from("learning_objectives")
+              .select("id, concept_id, objective, position")
+              .in("concept_id", conceptIds)
+              .order("position"),
+            supabase
+              .from("coding_problems")
+              .select("id, slug, title, difficulty, concept_id")
+              .in("concept_id", conceptIds)
+              .eq("status", "published"),
+          ])
+        : [{ data: [], error: null }, { data: [], error: null }];
+
+      if (objectives.error) throw objectives.error;
+      if (problems.error) throw problems.error;
+
+      return {
+        course,
+        module: {
+          id: chapter.id,
+          slug: chapter.slug,
+          title: chapter.title,
+          description: chapter.description,
+          position: chapter.position,
+        },
+        concepts: concepts ?? [],
+        objectives: objectives.data ?? [],
+        problems: problems.data ?? [],
+        siblings: siblings ?? [],
+      };
+    },
+  });
+
 export const useMastery = () => {
   const { user } = useAuth();
 
@@ -141,15 +244,22 @@ export const useConcept = (slug: string | undefined) =>
     queryKey: ["concept", slug],
     enabled: Boolean(slug),
     queryFn: async () => {
-      const { data: concept, error } = await supabase
+      // `concepts` is UNIQUE (chapter_id, slug) rather than globally unique, so
+      // two modules may legitimately both hold a concept called `introduction`.
+      // `maybeSingle()` raises on the second row, which would take a lesson
+      // page down over an editorial coincidence; taking the first in course
+      // order keeps it deterministic instead.
+      const { data: rows, error } = await supabase
         .from("concepts")
         .select(
           "id, slug, title, summary, content, difficulty, estimated_minutes, visual_key, position, chapter_id, chapters(id, slug, title, course_id, courses(id, slug, title))",
         )
         .eq("slug", slug!)
         .eq("status", "published")
-        .maybeSingle();
+        .order("position")
+        .limit(1);
       if (error) throw error;
+      const concept = rows?.[0];
       if (!concept) throw new Error("That concept could not be found, or it has not been published yet.");
 
       const [{ data: objectives }, { data: prerequisites }, { data: problems }] = await Promise.all([

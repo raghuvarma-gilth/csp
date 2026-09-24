@@ -220,38 +220,6 @@
 }
 
 @layer components {
-  /* Long-form lesson text. Serif at a comfortable measure — this is the one
-     place in the app people actually read paragraphs. */
-  .lesson-prose {
-    @apply text-[1.0625rem] leading-[1.75] text-foreground/90;
-    font-family: var(--font-serif);
-  }
-  .lesson-prose h1 { @apply mb-4 mt-8 font-sans text-2xl font-semibold text-foreground; }
-  .lesson-prose h2 { @apply mb-3 mt-8 font-sans text-xl font-semibold text-foreground; }
-  .lesson-prose h3 { @apply mb-2 mt-6 font-sans text-lg font-semibold text-foreground; }
-  .lesson-prose p { @apply mb-4; }
-  .lesson-prose ul { @apply mb-4 list-disc space-y-1.5 pl-6; }
-  .lesson-prose ol { @apply mb-4 list-decimal space-y-1.5 pl-6; }
-  .lesson-prose strong { @apply font-semibold text-foreground; }
-  .lesson-prose a { @apply text-primary underline underline-offset-4; }
-  .lesson-prose blockquote {
-    @apply my-4 border-l-4 border-primary/40 bg-primary/5 py-2 pl-4 pr-3 not-italic;
-  }
-  .lesson-prose code {
-    @apply rounded bg-muted px-1.5 py-0.5 text-[0.85em] font-medium text-foreground;
-    font-family: var(--font-mono);
-  }
-  .lesson-prose pre {
-    @apply my-5 overflow-x-auto rounded-xl border border-border bg-[hsl(226_36%_9%)] p-4 text-sm leading-relaxed text-[hsl(220_20%_92%)];
-    font-family: var(--font-mono);
-  }
-  .lesson-prose pre code {
-    @apply bg-transparent p-0 text-inherit;
-  }
-  .lesson-prose table { @apply my-4 w-full border-collapse text-sm font-sans; }
-  .lesson-prose th, .lesson-prose td { @apply border border-border px-3 py-2 text-left; }
-  .lesson-prose th { @apply bg-muted font-semibold; }
-
   .surface-card {
     @apply rounded-2xl border border-border bg-card/80 backdrop-blur-sm;
     box-shadow: var(--shadow-elevation);
