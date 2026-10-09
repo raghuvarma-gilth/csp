@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { MODULES, SECTIONS, firstOpKey } from "./registry";
 import { LabScene, webglAvailable } from "./scene";
 import { createLabContext, type Frame, type OpDef, type ParamDef, type ParamValues } from "./types";
-import { SPEED_MAX, SPEED_MIN, SPEED_STEP, useLabPlayer } from "./useLabPlayer";
+import { useLabPlayer } from "./useLabPlayer";
 
 /**
  * The 3-D algorithm lab.
@@ -24,8 +24,8 @@ import { SPEED_MAX, SPEED_MIN, SPEED_STEP, useLabPlayer } from "./useLabPlayer";
  * **The narration is DOM, not canvas.** The step description, the pseudocode and
  * the complexity table are real elements in an `aria-live` region. A `<canvas>`
  * is completely opaque to a screen reader, so if the explanation lived inside it
- * this screen would teach nothing to anyone using one. Keyboard control (arrows
- * step, space plays) comes from `useLabPlayer` for the same reason.
+ * this screen would teach nothing to anyone using one. Keyboard control (left
+ * and right arrows step) comes from `useLabPlayer` for the same reason.
  *
  * **WebGL is checked, not assumed.** This is now the only visualiser in the app,
  * so a machine that cannot give us a context gets a real explanation and a link
@@ -228,7 +228,7 @@ const DsaLab = ({
     }
   }, [module, op, params, valuesText]);
 
-  const player = useLabPlayer(frames, reducedMotion);
+  const player = useLabPlayer(frames);
 
   /* -------------------------------------------------------------------- */
   /* Scene lifecycle                                                      */
@@ -442,36 +442,23 @@ const DsaLab = ({
               ) : null}
             </div>
 
-            {/* Controls */}
+            {/* Controls — stepping only. There is no autoplay and no delay
+                setting: the narration below is the lesson, and a timer moving
+                the picture while it is being read was working against it. */}
             <div className="space-y-3 border-t border-border/60 p-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Button
-                  size="icon"
                   variant="outline"
                   onClick={player.prev}
                   disabled={player.index === 0}
                   aria-label="Previous step"
                 >
-                  <ChevronLeft className="h-4 w-4" aria-hidden />
+                  <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
+                  Previous
                 </Button>
-                <Button size="icon" onClick={player.toggle} aria-label={player.playing ? "Pause" : "Play"}>
-                  {player.playing ? (
-                    <Pause className="h-4 w-4" aria-hidden />
-                  ) : (
-                    <Play className="h-4 w-4" aria-hidden />
-                  )}
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={player.next}
-                  disabled={player.atEnd}
-                  aria-label="Next step"
-                >
-                  <ChevronRight className="h-4 w-4" aria-hidden />
-                </Button>
-                <Button size="icon" variant="ghost" onClick={player.restart} aria-label="Restart">
-                  <RotateCcw className="h-4 w-4" aria-hidden />
+                <Button onClick={player.next} disabled={player.atEnd} aria-label="Next step">
+                  Next
+                  <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
                 </Button>
 
                 <span className="ml-1 font-mono text-xs tabular-nums text-muted-foreground">
@@ -487,20 +474,6 @@ const DsaLab = ({
                   >
                     Reset view
                   </Button>
-                  <span className="hidden text-xs text-muted-foreground sm:inline">Delay</span>
-                  <div className="w-20">
-                    <Slider
-                      value={[player.speedMs]}
-                      onValueChange={([value]) => player.setSpeedMs(value)}
-                      min={SPEED_MIN}
-                      max={SPEED_MAX}
-                      step={SPEED_STEP}
-                      aria-label="Step delay in milliseconds"
-                    />
-                  </div>
-                  <span className="w-12 font-mono text-xs tabular-nums text-muted-foreground">
-                    {player.speedMs}ms
-                  </span>
                 </div>
               </div>
 
@@ -529,7 +502,7 @@ const DsaLab = ({
               </div>
 
               <p className="text-[11px] text-muted-foreground">
-                Arrow keys step, space plays. Drag to orbit, scroll to zoom.
+                Left and right arrow keys step. Drag to orbit, scroll to zoom.
               </p>
             </div>
           </CardContent>
@@ -584,7 +557,7 @@ const DsaLab = ({
 
               {reducedMotion ? (
                 <Badge variant="outline" className="mt-3 text-[10px]">
-                  Reduced motion on — autoplay and orbit are off
+                  Reduced motion on — camera orbit is off
                 </Badge>
               ) : null}
             </CardContent>
