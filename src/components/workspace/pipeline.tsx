@@ -64,6 +64,48 @@ export const TRANSITION_LABEL: Record<ContentStatus, string> = {
   archived: "Archive",
 };
 
+/**
+ * The kinds of research a contributor can write, in the order they are offered.
+ *
+ * Mirrors the CHECK constraint on `research_content.content_type`. Three screens
+ * render this vocabulary — the editor, the staff workspace and the student
+ * library — and a private copy in each is how one of them ends up showing a
+ * reader the words "case_study".
+ */
+export const RESEARCH_TYPE_LABEL: Record<string, string> = {
+  research_note: "Research note",
+  case_study: "Case study",
+  real_world_application: "Real-world application",
+  code_example: "Code example",
+  dataset: "Dataset",
+  reference: "Reference",
+};
+
+/**
+ * A readable name for a kind. Falls back to the raw value with its underscores
+ * opened out, because the database may grow a kind before this build knows it.
+ */
+export const researchTypeLabel = (type: string): string =>
+  RESEARCH_TYPE_LABEL[type] ?? type.replace(/_/g, " ");
+
+/**
+ * What an industry professional can post, in the order it is offered.
+ *
+ * Mirrors the CHECK constraint on `opportunities.kind`. These are five labels
+ * on one table rather than five tables, because an internship and a workshop
+ * differ in the word on the badge and nothing else that matters to a reader.
+ */
+export const OPPORTUNITY_KIND_LABEL: Record<string, string> = {
+  internship: "Internship",
+  job: "Job",
+  project: "Project",
+  workshop: "Workshop",
+  challenge: "Challenge",
+};
+
+export const opportunityKindLabel = (kind: string): string =>
+  OPPORTUNITY_KIND_LABEL[kind] ?? kind.replace(/_/g, " ");
+
 const BADGE_STYLE: Record<ContentStatus, string> = {
   draft: "border-border/70 bg-muted text-muted-foreground",
   submitted: "border-warning/40 bg-warning/10 text-warning",

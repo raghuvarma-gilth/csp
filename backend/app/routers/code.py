@@ -30,7 +30,7 @@ from ..auth import CurrentUserDep
 from ..config import settings
 from ..db import admin_db
 from ..errors import PublicError
-from ..services import gemini, sandbox
+from ..services import ai as gemini, sandbox
 from .quiz import award_achievements
 
 logger = logging.getLogger("eduverse.code")
@@ -382,7 +382,7 @@ async def _coach_on_failure(
     One short explanation of the *first* failure. Coaching is a bonus: if Gemini
     is unconfigured or down, grading still stands on its own.
     """
-    if is_solved or not settings.gemini_configured:
+    if is_solved or not settings.ai_configured:
         return None
 
     first = next((index for index, result in enumerate(results) if not result.passed), -1)

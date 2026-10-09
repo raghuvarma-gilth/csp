@@ -3,6 +3,7 @@
 User-agent: *
 Allow: /$
 Allow: /auth
+Allow: /register
 Disallow: /home
 Disallow: /learn
 Disallow: /roadmap
@@ -19,7 +20,6 @@ Disallow: /request-access
 Disallow: /faculty
 Disallow: /research
 Disallow: /admin
-Disallow: /.lovable/
 Disallow: /dashboard
 Disallow: /student-dashboard
 Disallow: /adaptive-learning
@@ -32,4 +32,4 @@ Disallow: /select-role
 Disallow: /faculty-dashboard
 Disallow: /research-dashboard
 
-Sitemap: https://eduverse-ai-by-yasar.lovable.app/sitemap.xml
+Sitemap: https://eduverse.example.com/sitemap.xml

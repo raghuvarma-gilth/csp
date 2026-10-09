@@ -38,11 +38,17 @@ const queryClient = new QueryClient({
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
+/* The three registration forms. They are separate routes rather than one page
+   with a picker, so "register as a professor" is a link you can send someone. */
+const RegisterStudent = lazy(() => import("./pages/auth/RegisterStudent"));
+const RegisterFaculty = lazy(() => import("./pages/auth/RegisterFaculty"));
+const RegisterIndustry = lazy(() => import("./pages/auth/RegisterIndustry"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const Home = lazy(() => import("./pages/Home"));
 const Learn = lazy(() => import("./pages/Learn"));
+const Library = lazy(() => import("./pages/Library"));
+const Updates = lazy(() => import("./pages/Updates"));
 const ConceptPage = lazy(() => import("./pages/ConceptPage"));
 const ModulePage = lazy(() => import("./pages/ModulePage"));
 const Roadmap = lazy(() => import("./pages/Roadmap"));
@@ -51,6 +57,7 @@ const Tutor = lazy(() => import("./pages/Tutor"));
 const CodingLab = lazy(() => import("./pages/CodingLab"));
 const CodingProblem = lazy(() => import("./pages/CodingProblem"));
 const VisualLearning = lazy(() => import("./pages/VisualLearning"));
+const VisualLab = lazy(() => import("./pages/VisualLab"));
 const FocusSession = lazy(() => import("./pages/FocusSession"));
 const ProgressPage = lazy(() => import("./pages/ProgressPage"));
 const Achievements = lazy(() => import("./pages/Achievements"));
@@ -60,6 +67,7 @@ const RequestAccess = lazy(() => import("./pages/RequestAccess"));
 
 const Faculty = lazy(() => import("./pages/Faculty"));
 const Research = lazy(() => import("./pages/Research"));
+const Industry = lazy(() => import("./pages/Industry"));
 const Admin = lazy(() => import("./pages/Admin"));
 
 const PageFallback = () => <LoadingState label="Loading page…" className="py-24" />;
@@ -89,7 +97,16 @@ const App = () => (
                 {/* Public */}
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+                {/* Registration: one form per kind of person. The bare path is the
+                    student form, which is the common case and the default. Static
+                    segments outrank the splat in React Router v6, so the two role
+                    paths win over it and anything else — a mistyped or retired
+                    role — bounces back to the student form rather than silently
+                    rendering a form the person did not ask for. */}
+                <Route path="/register" element={<RegisterStudent />} />
+                <Route path="/register/faculty" element={<RegisterFaculty />} />
+                <Route path="/register/industry" element={<RegisterIndustry />} />
+                <Route path="/register/*" element={<Navigate to="/register" replace />} />
 
                 {/* Student experience */}
                 <Route element={<ShellLayout />}>
@@ -100,6 +117,14 @@ const App = () => (
                       unique within a course — the course slug is part of the
                       address, not decoration. */}
                   <Route path="/learn/:courseSlug/:moduleSlug" element={<ModulePage />} />
+                  {/* What faculty and industry contributors published, once a
+                      reviewer approved it. Students only ever see 'published'. */}
+                  <Route path="/library" element={<Library />} />
+                  {/* Faculty announcements and open industry postings. Both read
+                      a SECURITY DEFINER function that filters on 'published'
+                      and drops anything expired, so a count here is a count of
+                      rows a student can actually act on. */}
+                  <Route path="/updates" element={<Updates />} />
                   <Route path="/roadmap" element={<Roadmap />} />
                   <Route path="/practice" element={<Practice />} />
                   <Route path="/practice/:conceptSlug" element={<Practice />} />
@@ -107,6 +132,10 @@ const App = () => (
                   <Route path="/code" element={<CodingLab />} />
                   <Route path="/code/:problemSlug" element={<CodingProblem />} />
                   <Route path="/visual" element={<VisualLearning />} />
+                  {/* Static segments outrank dynamic ones in React Router v6, so
+                      `/visual/lab` wins over `/visual/:visualKey` whichever order
+                      these are declared in — but keeping it first says so. */}
+                  <Route path="/visual/lab" element={<VisualLab />} />
                   <Route path="/visual/:visualKey" element={<VisualLearning />} />
                   <Route path="/focus" element={<FocusSession />} />
                   <Route path="/progress" element={<ProgressPage />} />
@@ -121,8 +150,28 @@ const App = () => (
                 <Route element={<ShellLayout allow={["faculty", "admin"]} />}>
                   <Route path="/faculty" element={<Faculty />} />
                 </Route>
-                <Route element={<ShellLayout allow={["research_expert", "admin"]} />}>
+                {/* Authoring, for everyone allowed to author — and faculty, who
+                    are the reviewers. Faculty were previously locked out of the
+                    only screen where research is approved, so nothing submitted
+                    here could ever reach a student. Authoring versus signing off
+                    is decided inside the page and again in RLS, not by this
+                    guard. */}
+                <Route
+                  element={
+                    <ShellLayout
+                      allow={["faculty", "research_expert", "industry_expert", "admin"]}
+                    />
+                  }
+                >
                   <Route path="/research" element={<Research />} />
+                </Route>
+                {/* Posting opportunities. Faculty are deliberately absent: they
+                    review these in the faculty workspace's queue but do not
+                    author them, which is what the server's AUTHORS map says.
+                    Administrators are in because every require_role check ORs
+                    them in anyway. */}
+                <Route element={<ShellLayout allow={["industry_expert", "admin"]} />}>
+                  <Route path="/industry" element={<Industry />} />
                 </Route>
                 <Route element={<ShellLayout allow={["admin"]} />}>
                   <Route path="/admin" element={<Admin />} />
@@ -140,6 +189,7 @@ const App = () => (
                 <Route path="/select-role" element={<Navigate to="/request-access" replace />} />
                 <Route path="/faculty-dashboard" element={<Navigate to="/faculty" replace />} />
                 <Route path="/research-dashboard" element={<Navigate to="/research" replace />} />
+                <Route path="/industry-dashboard" element={<Navigate to="/industry" replace />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { AppRole, useUserRole } from "@/hooks/useUserRole";
+import { AppRole, ROLE_NAME, dashboardFor, useUserRole } from "@/hooks/useUserRole";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -51,12 +51,13 @@ export const ProtectedRoute = ({ children, allow }: ProtectedRouteProps) => {
           </div>
           <h1 className="text-xl font-semibold">This area needs different access</h1>
           <p className="text-sm text-muted-foreground">
-            Your account is signed in as <strong>{role ?? "unknown"}</strong>. Faculty and research
-            areas are granted by an administrator — they cannot be self-assigned.
+            Your account is signed in as <strong>{role ? ROLE_NAME[role] : "unknown"}</strong>.
+            Faculty, research and industry areas are granted by an administrator approving a request
+            — they cannot be self-assigned, here or anywhere else in the product.
           </p>
           <div className="flex justify-center gap-3">
             <Button asChild variant="outline">
-              <Link to="/home">Back to learning</Link>
+              <Link to={dashboardFor(role)}>Back to your dashboard</Link>
             </Button>
             <Button asChild>
               <Link to="/request-access">Request access</Link>

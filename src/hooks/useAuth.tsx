@@ -5,10 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * Authentication.
  *
- * This hook knows nothing about roles, and that is deliberate. A role is read
- * from the server by `useUserRole` and written only by an administrator
- * approving a request — signing up never grants one, and there is no code path
- * here through which a browser could ask for one.
+ * This hook cannot grant a role, and that is deliberate. `signUp` carries a
+ * `signupIntent` — what the person said they are on the register form — but it
+ * travels as user metadata, which is attacker-controlled by definition, and the
+ * only thing the server does with it is open a PENDING row in `role_requests`.
+ * The signup trigger writes 'student' to `user_roles` regardless, and RLS on
+ * that table refuses an insert from any browser, so a forged intent buys
+ * exactly what an honest one does: a request an administrator has to read.
  *
  * `signUp` reports whether the project requires email confirmation instead of
  * assuming. When Supabase returns a user but no session, the account exists and
@@ -20,6 +23,17 @@ import { supabase } from "@/integrations/supabase/client";
  * origin plus a safe `?next=` parameter when one is present.
  */
 
+/** Which registration form was used. Not a role — a request for one. */
+export type SignupIntent = "student" | "faculty" | "industry_expert";
+
+interface SignUpDetails {
+  displayName?: string;
+  /** Defaults to "student", which requests nothing. */
+  intent?: SignupIntent;
+  /** Shown to the administrator reviewing a faculty/industry request. */
+  institution?: string;
+}
+
 interface SignUpResult {
   error: Error | null;
   /** True when Supabase created the account but withheld a session pending email confirmation. */
@@ -30,7 +44,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<SignUpResult>;
+  signUp: (email: string, password: string, details?: SignUpDetails) => Promise<SignUpResult>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider: Provider) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -63,11 +77,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, displayName?: string) => {
+  const signUp = async (email: string, password: string, details?: SignUpDetails) => {
     const nextParam = new URLSearchParams(window.location.search).get("next");
     const safeNext =
       nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/home";
     const redirectUrl = `${window.location.origin}${safeNext}`;
+
+    const intent = details?.intent ?? "student";
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -75,7 +91,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          display_name: displayName?.trim() || email.split("@")[0],
+          display_name: details?.displayName?.trim() || email.split("@")[0],
+          /* Read by handle_new_user(), which turns anything other than
+             'student' into a pending role request. Sending 'admin' here does
+             nothing: the trigger ignores it, the role_requests CHECK rejects
+             it, and user_roles has no INSERT policy for a browser at all. */
+          signup_intent: intent,
+          signup_institution: details?.institution?.trim() || null,
         },
       },
     });

@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole, type AppRole } from "@/hooks/useUserRole";
+import { useUserRole, ROLE_NAME, type AppRole } from "@/hooks/useUserRole";
 import ThemeToggle from "@/components/ThemeToggle";
 import { PageHeader } from "@/components/learning/primitives";
 import { ErrorState, LoadingState } from "@/components/states";
@@ -30,17 +30,11 @@ import { ErrorState, LoadingState } from "@/components/states";
  * RLS also scopes to them.
  */
 
-const ROLE_LABEL: Record<AppRole, string> = {
-  student: "Student",
-  faculty: "Faculty",
-  research_expert: "Research expert",
-  admin: "Administrator",
-};
-
 const ROLE_EXPLANATION: Record<AppRole, string> = {
   student: "You can learn, practise, and use every student tool.",
-  faculty: "You can author and submit course material for review.",
-  research_expert: "You can review submitted material, but not your own.",
+  faculty: "You can author course material and review what others submit.",
+  research_expert: "You can author research and case studies for review.",
+  industry_expert: "You can author real-world case studies and examples for review.",
   admin: "You can approve role requests and publish content.",
 };
 
@@ -125,7 +119,7 @@ const Profile = () => {
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="gap-1.5">
               <ShieldCheck className="h-3 w-3" aria-hidden />
-              {role ? ROLE_LABEL[role] : "Unknown"}
+              {role ? ROLE_NAME[role] : "Unknown"}
             </Badge>
             <span className="text-xs text-muted-foreground">
               {role ? ROLE_EXPLANATION[role] : "Your role could not be read. Try reloading."}
@@ -135,7 +129,7 @@ const Profile = () => {
           {request ? (
             <div className="rounded-lg border border-border/70 bg-muted/30 p-3 text-xs">
               <p className="font-medium">
-                {ROLE_LABEL[request.requested_role]} request — {request.status}
+                {ROLE_NAME[request.requested_role]} request — {request.status}
               </p>
               <p className="mt-1 text-muted-foreground">
                 Submitted {new Date(request.created_at).toLocaleDateString()}
@@ -151,7 +145,7 @@ const Profile = () => {
 
           {role === "student" && (!request || request.status === "rejected") ? (
             <Button asChild size="sm" variant="outline">
-              <Link to="/request-access">Request faculty or reviewer access</Link>
+              <Link to="/request-access">Request contributor access</Link>
             </Button>
           ) : null}
         </CardContent>

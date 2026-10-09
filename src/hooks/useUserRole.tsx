@@ -2,9 +2,49 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, R
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
-export type AppRole = "student" | "faculty" | "research_expert" | "admin";
+export type AppRole =
+  | "student"
+  | "faculty"
+  | "research_expert"
+  | "industry_expert"
+  | "admin";
+
+/** The roles a person can ask for. `admin` is granted out of band, never requested. */
+export type RequestableRole = Exclude<AppRole, "student" | "admin">;
 
 export type RoleRequestStatus = "pending" | "approved" | "rejected";
+
+/** How a role is written in prose. The single source for role labels in the UI. */
+export const ROLE_NAME: Record<AppRole, string> = {
+  student: "Student",
+  faculty: "Faculty",
+  research_expert: "Research expert",
+  industry_expert: "Industry professional",
+  admin: "Administrator",
+};
+
+/**
+ * Where a role starts.
+ *
+ * Four roles, four landing pages — a professor signing in wants their review
+ * queue, not a day streak. `null` is "we do not know yet": the role is resolved
+ * by a round trip, so callers must wait rather than send everybody to /home and
+ * bounce the three staff roles a moment later.
+ *
+ * This is navigation, not permission. Typing another role's path in the address
+ * bar still reaches ProtectedRoute, which asks the server, and every query
+ * behind it is checked again by RLS.
+ */
+export const DASHBOARD_FOR: Record<AppRole, string> = {
+  student: "/home",
+  faculty: "/faculty",
+  research_expert: "/research",
+  industry_expert: "/industry",
+  admin: "/admin",
+};
+
+export const dashboardFor = (role: AppRole | null): string =>
+  role ? DASHBOARD_FOR[role] : "/home";
 
 export interface RoleRequest {
   id: string;
@@ -26,10 +66,13 @@ interface UserRoleContextValue {
   request: RoleRequest | null;
   isFaculty: boolean;
   isResearchExpert: boolean;
+  isIndustryExpert: boolean;
+  /** May author material for review. Never use this to gate an approval. */
+  isContributor: boolean;
   isAdmin: boolean;
   refresh: () => Promise<void>;
   submitRoleRequest: (input: {
-    requestedRole: Exclude<AppRole, "student" | "admin">;
+    requestedRole: RequestableRole;
     justification: string;
     institution?: string;
   }) => Promise<{ error: string | null }>;
@@ -127,6 +170,12 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
       request,
       isFaculty: role === "faculty" || role === "admin",
       isResearchExpert: role === "research_expert" || role === "admin",
+      isIndustryExpert: role === "industry_expert" || role === "admin",
+      isContributor:
+        role === "faculty" ||
+        role === "research_expert" ||
+        role === "industry_expert" ||
+        role === "admin",
       isAdmin: role === "admin",
       refresh: load,
       submitRoleRequest,

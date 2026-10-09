@@ -1,12 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://eduverse-ai-by-yasar.lovable.app/</loc>
+    <loc>https://eduverse.example.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://eduverse-ai-by-yasar.lovable.app/auth</loc>
+    <loc>https://eduverse.example.com/auth</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://eduverse.example.com/register</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://eduverse.example.com/register/faculty</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://eduverse.example.com/register/industry</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

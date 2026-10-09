@@ -8,10 +8,13 @@ on the server rather than in the UI:
    only ever read `published`. A faculty member cannot jump a draft straight to
    published, because "approved" is the record that somebody checked it.
 
-2. Nobody approves their own work. `research_content` carries a database CHECK
-   (`research_no_self_review`) that makes self-review impossible even if this
-   code were wrong, and the check here exists to produce a readable message
-   instead of a constraint violation.
+2. Nobody approves their own work. Every reviewable table carries a database
+   CHECK (`research_no_self_review`, `announcements_no_self_review`,
+   `opportunities_no_self_review`) that makes self-review impossible even if
+   this code were wrong, and the check here exists to produce a readable
+   message instead of a constraint violation. The two newer tables go further:
+   they refuse an approved row with no reviewer at all, and a trigger stamps
+   the real caller into `reviewed_by` when the update arrives from a browser.
 
 Role requests are the *only* path to an elevated role, and approving one is
 admin-only. The `role_requests_elevatable_role` constraint means 'admin' cannot
@@ -27,7 +30,7 @@ from typing import Any, Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from ..auth import AdminDep, CurrentUser, CurrentUserDep, require_role, roles_of
+from ..auth import AdminDep, CurrentUser, CurrentUserDep, Role, require_role, roles_of
 from ..db import admin_db
 from ..errors import PublicError
 
@@ -53,6 +56,8 @@ TABLES: dict[str, str] = {
     "concept": "concepts",
     "problem": "coding_problems",
     "research": "research_content",
+    "announcement": "announcements",
+    "opportunity": "opportunities",
 }
 
 COLUMNS: dict[str, str] = {
@@ -66,6 +71,14 @@ COLUMNS: dict[str, str] = {
     "created_at, updated_at",
     "research": "id, concept_id, title, content_type, code_language, citations, status, "
     "created_by, reviewed_by, reviewed_at, review_note, created_at, updated_at",
+    # `body` is listed where the research equivalent (`content`) is not: an
+    # announcement is a paragraph, so the list endpoint can afford to carry it
+    # and the author can see what they wrote without opening the editor.
+    "announcement": "id, course_id, title, body, pinned, expires_at, status, created_by, "
+    "reviewed_by, reviewed_at, review_note, created_at, updated_at",
+    "opportunity": "id, kind, title, organisation, organisation_url, location, apply_url, "
+    "deadline, skills, concept_id, status, created_by, reviewed_by, reviewed_at, review_note, "
+    "created_at, updated_at",
 }
 
 # Editable fields per kind. Anything else a client sends is ignored rather than
@@ -103,7 +116,57 @@ EDITABLE: dict[str, set[str]] = {
         "code_language",
         "citations",
     },
+    "announcement": {"course_id", "title", "body", "pinned", "expires_at"},
+    "opportunity": {
+        "kind",
+        "title",
+        "description",
+        "organisation",
+        "organisation_url",
+        "location",
+        "apply_url",
+        "deadline",
+        "skills",
+        "concept_id",
+    },
 }
+
+# Everything a student is ever shown passes through review, so both new kinds
+# get the same reviewer stamping research already had. The database refuses an
+# approved row with no reviewer (`*_reviewed_before_live`), which makes
+# forgetting to list a kind here a loud failure rather than a silent hole.
+REVIEWED_KINDS = {"research", "announcement", "opportunity"}
+
+# Who may reach a workspace, and who may add to one. These differ, and
+# conflating them is how a reviewer ends up unable to review: faculty must be
+# able to list opportunities because they sign them off, but an internship is
+# posted by the industry professional whose organisation is offering it.
+READERS: dict[str, tuple[Role, ...]] = {
+    "course": ("faculty",),
+    "chapter": ("faculty",),
+    "concept": ("faculty",),
+    "problem": ("faculty",),
+    "research": ("research_expert", "faculty", "industry_expert"),
+    "announcement": ("faculty",),
+    "opportunity": ("industry_expert", "faculty"),
+}
+
+AUTHORS: dict[str, tuple[Role, ...]] = {
+    "course": ("faculty",),
+    "chapter": ("faculty",),
+    "concept": ("faculty",),
+    "problem": ("faculty",),
+    "research": ("research_expert", "faculty", "industry_expert"),
+    "announcement": ("faculty",),
+    "opportunity": ("industry_expert",),
+}
+
+# Kinds where a row belongs to the person who wrote it, so another holder of
+# the same role may review it but not rewrite it. An announcement carries its
+# author's name to students; a second professor editing it would be putting
+# words in a colleague's mouth. Curriculum is deliberately not in this set —
+# a course is owned by the faculty collectively.
+AUTHOR_OWNED = {"announcement", "opportunity"}
 
 
 class WriteRequest(BaseModel):
@@ -119,7 +182,10 @@ class TransitionRequest(BaseModel):
 
 
 class RoleRequestBody(BaseModel):
-    requestedRole: Literal["faculty", "research_expert"]
+    # `admin` is deliberately absent: it is granted out of band, never asked for.
+    # The database agrees independently — role_requests_elevatable_role refuses
+    # it — so a client bypassing this model gains nothing.
+    requestedRole: Literal["faculty", "research_expert", "industry_expert"]
     justification: str = Field(min_length=20, max_length=2000)
     institution: str | None = Field(default=None, max_length=200)
 
@@ -144,10 +210,34 @@ def _table_for(kind: str) -> str:
 
 
 async def _authorise(kind: str, user: CurrentUser) -> set[str]:
-    """Research experts own research content; faculty own the curriculum."""
-    if kind == "research":
-        return await require_role(user, "research_expert", "faculty")
-    return await require_role(user, "faculty")
+    """Who may reach a workspace at all.
+
+    Three roles author research — research experts, faculty and industry
+    professionals — faculty own the curriculum and the announcements, and
+    industry professionals post the opportunities. Faculty appear in the
+    opportunity list because they are its reviewers.
+
+    Reaching a workspace is not permission to add to it (see `_authorise_write`)
+    and not permission to sign work off: the review transitions are gated
+    separately below, and `*_no_self_review` refuses an author reviewing their
+    own row whatever this function returns.
+    """
+    allowed = READERS.get(kind)
+    if not allowed:
+        raise PublicError(
+            f"'{kind}' is not something this workspace manages.", status=400, code="unknown_kind"
+        )
+    return await require_role(user, *allowed)
+
+
+async def _authorise_write(kind: str, user: CurrentUser) -> set[str]:
+    """Who may create or revise a row of this kind."""
+    allowed = AUTHORS.get(kind)
+    if not allowed:
+        raise PublicError(
+            f"'{kind}' is not something this workspace manages.", status=400, code="unknown_kind"
+        )
+    return await require_role(user, *allowed)
 
 
 # ---------------------------------------------------------------------------
@@ -176,7 +266,7 @@ async def list_content(
 
 @router.post("/content")
 async def create_content(payload: WriteRequest, user: CurrentUserDep) -> dict[str, Any]:
-    await _authorise(payload.kind, user)
+    await _authorise_write(payload.kind, user)
     table = _table_for(payload.kind)
 
     values = {
@@ -197,13 +287,23 @@ async def create_content(payload: WriteRequest, user: CurrentUserDep) -> dict[st
 async def update_content(
     kind: str, item_id: str, payload: WriteRequest, user: CurrentUserDep
 ) -> dict[str, Any]:
-    held = await _authorise(kind, user)
+    held = await _authorise_write(kind, user)
     table = _table_for(kind)
     db = admin_db()
 
     existing = await db.maybe_single(table, "id, status, created_by", filters={"id": item_id})
     if not existing:
         raise PublicError("That item was not found.", status=404, code="not_found")
+
+    # An announcement or an opportunity is published under its author's name, so
+    # only its author rewrites it. A reviewer who disagrees returns it to draft
+    # with a note instead of editing it on their behalf.
+    if kind in AUTHOR_OWNED and existing["created_by"] != user.id and "admin" not in held:
+        raise PublicError(
+            "Only the person who wrote this can edit it. Return it to draft with a note instead.",
+            status=403,
+            code="not_author",
+        )
 
     # Published material is edited by taking it back to draft first, so nobody
     # silently rewrites what students are currently reading.
@@ -251,7 +351,8 @@ async def transition_content(payload: TransitionRequest, user: CurrentUserDep) -
     is_review = payload.to in REVIEW_TRANSITIONS
     if is_review:
         # Approving and publishing are review decisions. Faculty and admins make
-        # them; research experts submit for review but do not sign off.
+        # them. Research experts and industry professionals author and submit for
+        # review; they never sign off, not even on somebody else's work.
         if "faculty" not in held and "admin" not in held:
             raise PublicError(
                 "Approving and publishing are done by faculty. Submit it for review instead.",
@@ -264,9 +365,19 @@ async def transition_content(payload: TransitionRequest, user: CurrentUserDep) -
                 status=403,
                 code="self_review",
             )
+    elif payload.kind in AUTHOR_OWNED and item["created_by"] != user.id:
+        # Submitting and archiving are the author's calls on their own row.
+        # Reviewers get the review transitions above, plus "return to draft"
+        # (which is a review decision in everything but name, so it is allowed).
+        if payload.to != "draft" and "faculty" not in held and "admin" not in held:
+            raise PublicError(
+                "This is somebody else's to submit. You can return it to draft with a note.",
+                status=403,
+                code="not_author",
+            )
 
     values: dict[str, Any] = {"status": payload.to, "updated_at": now_iso()}
-    if payload.kind == "research" and (is_review or payload.to == "draft"):
+    if payload.kind in REVIEWED_KINDS and (is_review or payload.to == "draft"):
         values |= {
             "reviewed_by": user.id,
             "reviewed_at": now_iso(),
@@ -290,22 +401,29 @@ async def content_overview(user: CurrentUserDep) -> dict[str, Any]:
     held = await require_role(user, "faculty", "research_expert")
     db = admin_db()
 
-    kinds = ["course", "chapter", "concept", "problem", "research"]
     counts: dict[str, dict[str, int]] = {}
-    for kind in kinds:
+    for kind in TABLES:
         table = TABLES[kind]
         counts[kind] = {
             status: await db.count(table, filters={"status": status})
             for status in ("draft", "submitted", "approved", "published", "archived")
         }
 
-    review_queue = await db.select(
-        "research_content",
-        "id, title, content_type, status, created_by, created_at",
-        filters={"status": "submitted"},
-        order="created_at.asc",
-        limit=50,
-    )
+    # Everything waiting for a reviewer, in one queue. Each row carries the kind
+    # it came from because the caller needs it to name a transition, and because
+    # "approve" means something different to a reader looking at an internship
+    # than to one looking at a lesson.
+    review_queue: list[dict[str, Any]] = []
+    for kind in sorted(REVIEWED_KINDS):
+        rows = await db.select(
+            TABLES[kind],
+            "id, title, status, created_by, created_at",
+            filters={"status": "submitted"},
+            order="created_at.asc",
+            limit=50,
+        )
+        review_queue.extend({**row, "kind": kind} for row in rows)
+    review_queue.sort(key=lambda row: row["created_at"])
 
     pending_roles = (
         await db.count("role_requests", filters={"status": "pending"})

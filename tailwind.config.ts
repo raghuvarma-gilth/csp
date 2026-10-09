@@ -123,6 +123,15 @@ export default {
         lg: "var(--shadow-lg)",
         xl: "var(--shadow-xl)",
         "2xl": "var(--shadow-2xl)",
+        // The elevation scale proper. Each step is a hairline ring + a top rim
+        // light + two shadow layers; in dark mode the rim light is what makes
+        // a surface read as raised, because the shadow alone is invisible.
+        "elev-0": "var(--elevation-0)",
+        "elev-1": "var(--elevation-1)",
+        "elev-2": "var(--elevation-2)",
+        "elev-3": "var(--elevation-3)",
+        "elev-4": "var(--elevation-4)",
+        inset: "var(--elevation-inset)",
       },
     },
   },

@@ -2,7 +2,7 @@
 EduVerse API.
 
 Everything the browser must not be trusted with lives behind this process:
-the Gemini and Hugging Face keys, the Supabase service role, question answer
+the Gemini / Grok and Hugging Face keys, the Supabase service role, question answer
 keys, grading, and role grants. The browser holds only the anon key and the
 signed-in user's own access token.
 
@@ -42,8 +42,18 @@ async def lifespan(app: FastAPI):
     # obvious in the logs rather than only when a student hits a 503.
     if not settings.supabase_configured:
         logger.warning("Supabase is not configured: every data route will return 503.")
-    if not settings.gemini_configured:
-        logger.warning("GEMINI_API_KEY is not set: tutor, quizzes and diagnostic are unavailable.")
+    if not settings.ai_configured:
+        logger.warning("Neither GEMINI_API_KEY nor GROK_API_KEY is set: tutor, quizzes and diagnostic are unavailable.")
+    elif not settings.gemini_configured:
+        logger.info("GEMINI_API_KEY is not set; using Grok (%s) for AI features.", settings.grok_model)
+    elif not settings.grok_configured:
+        logger.info("GROK_API_KEY is not set; using Gemini (%s) for AI features.", settings.gemini_model)
+    else:
+        logger.info(
+            "Both Gemini (%s) and Grok (%s) are configured; Gemini is the primary provider.",
+            settings.gemini_model,
+            settings.grok_model,
+        )
     if not settings.embeddings_configured:
         logger.warning("HUGGINGFACE_API_KEY is not set: retrieval and ingest are unavailable.")
     if not settings.code_execution_enabled:

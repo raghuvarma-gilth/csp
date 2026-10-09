@@ -23,8 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Secrets. The root .env holds the Supabase service-role key and the Gemini and
-# Hugging Face API keys — none of which may ever be committed.
+# Secrets. backend/.env holds the Supabase service-role key and the Gemini and
+# Hugging Face API keys; the root .env holds the public VITE_* values. Neither
+# may ever be committed.
 .env
 .env.*
 !.env.example
@@ -40,4 +41,9 @@ venv/
 # Supabase local files
 supabase/.temp/
 
-# Claude local settings.claude/settings.local.json
+# TypeScript incremental build state, written by `npm run typecheck`.
+*.tsbuildinfo
+
+# Claude local settings. Note the *.local rule above does not cover this:
+# the filename is settings.local.json, so the pattern has to be spelled out.
+.claude/settings.local.json

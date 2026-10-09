@@ -116,6 +116,133 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          body: string
+          course_id: string | null
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          pinned: boolean
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["content_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          course_id?: string | null
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          pinned?: boolean
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          course_id?: string | null
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          pinned?: boolean
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunities: {
+        Row: {
+          apply_url: string | null
+          concept_id: string | null
+          created_at: string
+          created_by: string
+          deadline: string | null
+          description: string
+          id: string
+          kind: string
+          location: string | null
+          organisation: string
+          organisation_url: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          skills: string[]
+          status: Database["public"]["Enums"]["content_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          apply_url?: string | null
+          concept_id?: string | null
+          created_at?: string
+          created_by: string
+          deadline?: string | null
+          description: string
+          id?: string
+          kind: string
+          location?: string | null
+          organisation: string
+          organisation_url?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          skills?: string[]
+          status?: Database["public"]["Enums"]["content_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          apply_url?: string | null
+          concept_id?: string | null
+          created_at?: string
+          created_by?: string
+          deadline?: string | null
+          description?: string
+          id?: string
+          kind?: string
+          location?: string | null
+          organisation?: string
+          organisation_url?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          skills?: string[]
+          status?: Database["public"]["Enums"]["content_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_conversations: {
         Row: {
           concept_id: string | null
@@ -1896,7 +2023,15 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      is_contributor: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       is_faculty: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      is_industry_expert: {
         Args: { _user_id: string }
         Returns: boolean
       }
@@ -1924,6 +2059,60 @@ export type Database = {
           document_title: string
           heading: string
           similarity: number
+        }[]
+      }
+      published_announcements: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          author_name: string | null
+          author_role: Database["public"]["Enums"]["app_role"] | null
+          body: string
+          course_id: string | null
+          course_title: string | null
+          created_at: string
+          id: string
+          pinned: boolean
+          title: string
+          updated_at: string
+        }[]
+      }
+      published_contributions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          author_name: string | null
+          author_role: Database["public"]["Enums"]["app_role"] | null
+          citations: Json
+          code_language: string | null
+          concept_id: string | null
+          concept_slug: string | null
+          concept_title: string | null
+          content: string
+          content_type: string
+          id: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      published_opportunities: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          apply_url: string | null
+          author_name: string | null
+          author_role: Database["public"]["Enums"]["app_role"] | null
+          concept_id: string | null
+          concept_slug: string | null
+          concept_title: string | null
+          created_at: string
+          deadline: string | null
+          description: string
+          id: string
+          kind: string
+          location: string | null
+          organisation: string
+          organisation_url: string | null
+          skills: string[]
+          title: string
+          updated_at: string
         }[]
       }
       refresh_learning_streak: {
@@ -1957,7 +2146,12 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "student" | "faculty" | "research_expert" | "admin"
+      app_role:
+        | "student"
+        | "faculty"
+        | "research_expert"
+        | "industry_expert"
+        | "admin"
       content_status:
         | "draft"
         | "submitted"
@@ -2091,7 +2285,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["student", "faculty", "research_expert", "admin"],
+      app_role: ["student", "faculty", "research_expert", "industry_expert", "admin"],
       content_status: [
         "draft",
         "submitted",

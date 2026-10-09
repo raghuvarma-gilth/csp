@@ -58,14 +58,35 @@ import { apiTarget, callFunction, errorMessage, getJson } from "@/lib/api";
  *
  *   · Nobody signs off their own work. Where the signed-in user is the author,
  *     the approve and publish buttons are disabled and say why. The server
- *     refuses it independently, and so does a CHECK constraint on
- *     `research_content` — three layers, because this is the rule the whole
- *     review workflow rests on.
+ *     refuses it independently, and so does a CHECK constraint on each reviewed
+ *     table — three layers, because this is the rule the whole review workflow
+ *     rests on.
+ *
+ * The review queue spans every reviewed kind, not just research: faculty are
+ * also the reviewers for the opportunities industry accounts post, and a queue
+ * that quietly omitted them would mean nothing an industry professional
+ * submitted could ever reach a student.
  *
  * The counts at the top are `SELECT count(*)` results, not estimates.
  */
 
-const KINDS: ContentKind[] = ["course", "chapter", "concept", "problem", "research"];
+const KINDS: ContentKind[] = [
+  "course",
+  "chapter",
+  "concept",
+  "problem",
+  "research",
+  "announcement",
+];
+
+/**
+ * The counts table covers one more kind than the tabs do. Faculty review
+ * opportunities but may not author them — the server's `AUTHORS` map lists only
+ * industry accounts — so offering a "New opportunity" tab here would draw a
+ * button the API refuses. Showing where they sit is useful; offering to write
+ * one is not.
+ */
+const COUNT_KINDS: ContentKind[] = [...KINDS, "opportunity"];
 
 interface ListResponse {
   kind: ContentKind;
@@ -77,7 +98,8 @@ interface OverviewResponse {
   reviewQueue: Array<{
     id: string;
     title: string;
-    content_type: string;
+    /** Which table the row came from. The server stamps it; see content.py. */
+    kind: ContentKind;
     status: ContentStatus;
     created_by: string;
     created_at: string;
@@ -155,6 +177,11 @@ const Faculty = () => {
     void queryClient.invalidateQueries({ queryKey: ["content"] });
     void queryClient.invalidateQueries({ queryKey: ["content-overview"] });
     void queryClient.invalidateQueries({ queryKey: ["curriculum"] });
+    /* Approving an announcement or an opportunity changes what the student
+       dashboard reads, so the two published_* queries go stale here too. */
+    void queryClient.invalidateQueries({ queryKey: ["published-announcements"] });
+    void queryClient.invalidateQueries({ queryKey: ["published-opportunities"] });
+    void queryClient.invalidateQueries({ queryKey: ["published-contributions"] });
   };
 
   const transition = useMutation({
@@ -186,7 +213,7 @@ const Faculty = () => {
       <PageHeader
         eyebrow="Faculty"
         title="Course workspace"
-        description="Author the curriculum and move it through review. Students only ever see what reaches Published."
+        description="Author the curriculum, post announcements, and move everything through review — including what industry accounts submit. Students only ever see what reaches Published."
         actions={
           <Button size="sm" onClick={() => openEditor(null)}>
             <Plus className="mr-2 h-4 w-4" aria-hidden />
@@ -257,7 +284,7 @@ const Faculty = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {KINDS.map((row) => (
+                  {COUNT_KINDS.map((row) => (
                     <tr key={row} className="border-b border-border/40 last:border-0">
                       <td className="py-2 pr-3 font-medium">{KIND_LABEL[row]}</td>
                       {STATUS_ORDER.map((key) => {
@@ -289,18 +316,18 @@ const Faculty = () => {
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             <ClipboardCheck className="h-4 w-4" aria-hidden />
-            Research awaiting sign-off
+            Awaiting your sign-off
           </h2>
           <div className="space-y-2">
             {queue.map((row) => {
               const own = row.created_by === user?.id;
               return (
-                <Card key={row.id} className="surface-card border-warning/30">
+                <Card key={`${row.kind}-${row.id}`} className="surface-card border-warning/30">
                   <CardContent className="flex flex-wrap items-center justify-between gap-3 p-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{row.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {row.content_type.replace(/_/g, " ")} · submitted{" "}
+                        {KIND_LABEL[row.kind] ?? row.kind} · submitted{" "}
                         {new Date(row.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -316,7 +343,7 @@ const Faculty = () => {
                             size="sm"
                             disabled={transition.isPending}
                             onClick={() =>
-                              transition.mutate({ kind: "research", id: row.id, to: "approved" })
+                              transition.mutate({ kind: row.kind, id: row.id, to: "approved" })
                             }
                           >
                             Approve
@@ -326,7 +353,7 @@ const Faculty = () => {
                             variant="outline"
                             disabled={transition.isPending}
                             onClick={() =>
-                              transition.mutate({ kind: "research", id: row.id, to: "draft" })
+                              transition.mutate({ kind: row.kind, id: row.id, to: "draft" })
                             }
                           >
                             Return to draft
