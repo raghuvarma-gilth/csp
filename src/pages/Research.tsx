@@ -27,6 +27,7 @@ import {
 import {
   Pipeline,
   REVIEW_TRANSITIONS,
+  researchTypeLabel,
   STATUS_HINT,
   STATUS_LABEL,
   STATUS_ORDER,
@@ -40,25 +41,20 @@ import { apiTarget, callFunction, errorMessage, getJson } from "@/lib/api";
 /**
  * The research workspace.
  *
- * A research expert writes and submits. They do not sign off — not their own
- * work and not anyone else's. That is the point of having the role at all, and
- * it is enforced in three places: this screen does not draw the buttons,
+ * Three roles author here — research expert, faculty, and industry professional —
+ * and only faculty and administrators sign off. Nobody signs off their own work.
+ * That is enforced in three places: this screen does not draw the buttons,
  * `transition_content` refuses the request, and a CHECK constraint on
  * `research_content` refuses a row whose reviewer is its author.
  *
+ * Faculty are here because they are the reviewers. A reviewer arriving at a
+ * review queue filtered to their own work would see nothing to review, so the
+ * "only what I wrote" switch starts off for them and on for everyone else.
+ *
  * Research attaches to a *published* concept. The picker below is the published
- * curriculum, read through RLS — a research expert has no authority over the
- * course tree and this page does not pretend otherwise.
+ * curriculum, read through RLS — an author has no authority over the course tree
+ * and this page does not pretend otherwise.
  */
-
-const CONTENT_TYPE_LABEL: Record<string, string> = {
-  research_note: "Research note",
-  case_study: "Case study",
-  real_world_application: "Real-world application",
-  code_example: "Code example",
-  dataset: "Dataset",
-  reference: "Reference",
-};
 
 interface ListResponse {
   kind: "research";
@@ -71,13 +67,18 @@ const Research = () => {
   const curriculum = useCurriculum();
   const queryClient = useQueryClient();
 
-  const [status, setStatus] = useState<ContentStatus | "all">("all");
-  const [mine, setMine] = useState(true);
-  const [editing, setEditing] = useState<ContentRow | null>(null);
-  const [editorOpen, setEditorOpen] = useState(false);
-
   const configured = apiTarget === "python";
   const canReview = role === "admin" || role === "faculty";
+
+  const [status, setStatus] = useState<ContentStatus | "all">("all");
+  /* null until the person touches the switch. `role` is null on the first
+     render, so a useState initial value computed from it would be stale by the
+     time it resolves; deriving the default instead keeps the two in step. A
+     reviewer wants other people's work, an author wants their own. */
+  const [mineChoice, setMineChoice] = useState<boolean | null>(null);
+  const mine = mineChoice ?? !canReview;
+  const [editing, setEditing] = useState<ContentRow | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -200,7 +201,7 @@ const Research = () => {
         </Select>
 
         <div className="flex items-center gap-2">
-          <Switch id="mine" checked={mine} onCheckedChange={setMine} />
+          <Switch id="mine" checked={mine} onCheckedChange={setMineChoice} />
           <Label htmlFor="mine" className="text-xs">
             Only what I wrote
           </Label>
@@ -263,7 +264,7 @@ const Research = () => {
                         ) : null}
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {CONTENT_TYPE_LABEL[contentType] ?? contentType.replace(/_/g, " ")} · updated{" "}
+                        {researchTypeLabel(contentType)} · updated{" "}
                         {new Date(item.updated_at).toLocaleDateString()}
                       </p>
                     </div>

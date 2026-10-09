@@ -27,7 +27,7 @@ from .config import settings
 from .db import Database, admin_db, http_client
 from .errors import PublicError
 
-Role = Literal["student", "faculty", "research_expert", "admin"]
+Role = Literal["student", "faculty", "research_expert", "industry_expert", "admin"]
 
 _TOKEN_TTL_SECONDS = 20.0
 _token_cache: dict[str, tuple[float, str, str | None]] = {}

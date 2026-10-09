@@ -40,4 +40,9 @@ venv/
 # Supabase local files
 supabase/.temp/
 
-# Claude local settings.claude/settings.local.json
+# TypeScript incremental build state, written by `npm run typecheck`.
+*.tsbuildinfo
+
+# Claude local settings. Note the *.local rule above does not cover this:
+# the filename is settings.local.json, so the pattern has to be spelled out.
+.claude/settings.local.json

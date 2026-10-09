@@ -4,7 +4,7 @@ FastAPI. This process holds everything the browser must not be trusted with:
 
 | Secret / capability | Why it cannot live in the frontend |
 | --- | --- |
-| `GEMINI_API_KEY`, `HUGGINGFACE_API_KEY` | Anything in a `VITE_*` variable is in the shipped bundle. |
+| `GEMINI_API_KEY`, `GROK_API_KEY`, `HUGGINGFACE_API_KEY` | Anything in a `VITE_*` variable is in the shipped bundle. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Bypasses row-level security completely. |
 | Quiz answer keys | `quiz_questions` has no student SELECT policy; only `/quiz-submit` compares against `correct_index`. |
 | Grading | `student_attempts` has no client INSERT policy, so a student cannot post themselves a score. |
@@ -28,11 +28,13 @@ Interactive API docs: <http://localhost:8000/docs>. Configuration report: <http:
 
 ## What "not configured" means
 
-Nothing here has a working default that lets a missing key pass unnoticed. Without `GEMINI_API_KEY` the tutor returns
+Nothing here has a working default that lets a missing key pass unnoticed. Without both `GEMINI_API_KEY` and `GROK_API_KEY` the tutor returns
 
 ```json
-{ "error": "…an administrator needs to add a Gemini API key.", "code": "gemini_not_configured" }
+{ "error": "…an administrator needs to set GEMINI_API_KEY or GROK_API_KEY…", "code": "ai_not_configured" }
 ```
+
+When either one is configured, AI features work. When both are configured, Gemini is the primary provider.
 
 and the UI renders that as a settings notice. It does not return a canned reply, and it never invents a score, a statistic or a citation. `GET /api/health` lists exactly what is missing.
 
@@ -46,6 +48,8 @@ app/
   auth.py        Identity from GoTrue, roles from public.user_roles — never from the request
   services/
     gemini.py      Gemini REST; structured JSON output; no fallback text anywhere
+    grok.py        xAI Grok REST; OpenAI-compatible chat completions format
+    ai.py          Provider dispatcher: picks Gemini or Grok based on configuration
     embeddings.py  Hugging Face feature-extraction, mean-pooled to 384 dims
     decay.py       Concept-decay maths (see "Four copies" below)
     sandbox.py     Runs student code. NOT a security boundary — read its docstring

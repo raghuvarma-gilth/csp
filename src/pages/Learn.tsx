@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCurriculum, useMastery, usePrerequisites } from "@/hooks/useLearning";
 import { ConceptCard, ModuleCard, PageHeader, ProgressRing } from "@/components/learning/primitives";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
+import { CONFIDENT_MASTERY } from "@/lib/mastery";
 
 /**
  * Learn — the curriculum, as published.
@@ -31,7 +32,9 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
  * rather than as not-yet-attempted.
  */
 
-const CONFIDENT = 60;
+/* Shared with Home, which draws rings over the same courses. See
+   CONFIDENT_MASTERY in lib/mastery.ts for why it sits below the mastery bar. */
+const CONFIDENT = CONFIDENT_MASTERY;
 
 const Learn = () => {
   const [query, setQuery] = useState("");
@@ -181,12 +184,18 @@ const Learn = () => {
 
               return (
                 <section key={course.id} className="space-y-4">
-                  <Card className="surface-card overflow-hidden">
-                    <div className="bg-gradient-to-br from-primary/10 via-transparent to-accent/10">
+                  <Card className="surface-card depth-3 relative overflow-hidden">
+                    {/* Two light sources rather than a flat wash — the card
+                        should read as lit, not tinted. */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 bg-[radial-gradient(60rem_20rem_at_0%_0%,hsl(var(--primary)/0.16),transparent_60%),radial-gradient(50rem_20rem_at_100%_100%,hsl(var(--accent)/0.16),transparent_58%)]"
+                    />
+                    <div className="relative">
                       <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
                         <div className="min-w-0 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/12 text-primary">
+                            <span className="grid h-9 w-9 place-items-center rounded-xl bg-card text-primary depth-2">
                               <GraduationCap className="h-4 w-4" aria-hidden />
                             </span>
                             {course.code ? (

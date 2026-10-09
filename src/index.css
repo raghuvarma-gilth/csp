@@ -7,187 +7,259 @@
 @tailwind utilities;
 
 /* ===========================================================================
-   EduVerse design system
+   EduVerse design system — "spatial"
    ---------------------------------------------------------------------------
-   One palette, defined once, in HSL. The previous theme declared a green
-   --primary while every gradient painted purple, and --muted-foreground was
-   darker than --muted, which made secondary text unreadable. Both are fixed
-   here: ink-and-indigo for structure, teal for progress, amber for attention.
+   Dark-first. Surfaces have thickness: every raised element carries a hairline
+   ring, a top rim light and two shadow layers, because in a dark UI a drop
+   shadow alone is invisible — it is the rim light that makes a card read as a
+   physical plate rather than a lighter rectangle.
 
-   Contrast targets: body text >= 7:1 on --background, muted text >= 4.5:1.
+   Palette: a deep violet-black ground, electric cyan as the single signal
+   colour (navigation, action, the learning path), violet as the secondary
+   voice (AI and tutor surfaces). The previous theme was generic indigo/teal
+   and the teal sat 13 degrees from the mastery-high hue, so "accent" and
+   "strong mastery" were the same colour with two meanings. Fixed: the mastery
+   ramp is now a monotonic heat scale — slate, rose, burnt amber, olive lime,
+   emerald — that collides with nothing.
+
+   TOKEN NAMES ARE LOAD-BEARING. src/components/learning/diagrams.tsx paints
+   13 teaching figures with fill-primary / stroke-border / fill-warning/15 and
+   friends, and lib/mastery.ts maps bands to text-mastery-*. Renaming a token
+   makes those render uncoloured and throws nothing. Re-skin values, never
+   names.
+
+   Contrast: body text >= 7:1 on --background; every colour used as text
+   (including all five --mastery-* steps) >= 4.5:1 in both themes.
    =========================================================================== */
 
 @layer base {
   :root {
-    --background: 220 33% 98%;
-    --foreground: 224 39% 12%;
+    /* ---- Light: the same spatial language, lit from above ---- */
+    --background: 240 30% 97%;
+    --foreground: 250 40% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 39% 12%;
+    --card-foreground: 250 40% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 39% 12%;
+    --popover-foreground: 250 40% 11%;
 
-    /* Indigo — structure, navigation, primary action */
-    --primary: 243 75% 56%;
-    --primary-light: 243 80% 68%;
-    --primary-dark: 243 66% 42%;
+    /* Cyan — structure, navigation, primary action, the learning path */
+    --primary: 192 95% 27%;
+    --primary-light: 189 88% 40%;
+    --primary-dark: 194 92% 20%;
     --primary-foreground: 0 0% 100%;
 
-    /* Teal — mastery and forward progress */
-    --accent: 173 80% 36%;
-    --accent-light: 173 70% 46%;
+    /* Violet — the AI/tutor voice and secondary emphasis */
+    --accent: 272 72% 48%;
+    --accent-light: 272 78% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 94%;
-    --secondary-foreground: 224 30% 20%;
+    --secondary: 244 26% 93%;
+    --secondary-foreground: 250 32% 20%;
 
-    --muted: 220 20% 95%;
-    --muted-foreground: 220 12% 42%;
+    --muted: 244 26% 94%;
+    --muted-foreground: 248 14% 42%;
 
-    --success: 152 62% 36%;
-    --success-light: 152 55% 46%;
+    --success: 152 65% 30%;
+    --success-light: 152 58% 40%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 35 92% 46%;
-    --warning-light: 38 95% 56%;
-    --warning-foreground: 30 60% 12%;
+    --warning: 26 90% 33%;
+    --warning-light: 32 92% 46%;
+    --warning-foreground: 0 0% 100%;
 
-    --info: 205 85% 45%;
-    --info-light: 205 85% 56%;
+    --info: 205 88% 36%;
+    --info-light: 205 85% 48%;
     --info-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 48%;
+    --destructive: 352 72% 46%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 16% 88%;
-    --input: 220 16% 88%;
-    --ring: 243 75% 56%;
+    --border: 246 20% 88%;
+    --input: 246 20% 88%;
+    --ring: 192 95% 27%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    /* Mastery scale — used by the Learning DNA map and every progress bar */
-    --mastery-none: 220 14% 80%;
-    --mastery-low: 0 72% 55%;
-    --mastery-mid: 35 92% 50%;
-    --mastery-high: 173 70% 40%;
-    --mastery-full: 152 62% 38%;
+    /* Mastery ramp — a data encoding, monotonic in perceived heat. Every step
+       is also used as text, so every step clears 4.5:1 on --background. */
+    --mastery-none: 246 14% 78%;
+    --mastery-low: 352 76% 45%;
+    --mastery-mid: 26 90% 33%;
+    --mastery-high: 84 70% 27%;
+    --mastery-full: 152 65% 29%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(243 75% 56%) 0%, hsl(262 72% 58%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(173 80% 36%) 0%, hsl(190 80% 42%) 100%);
-    --gradient-hero: linear-gradient(140deg, hsl(243 75% 56%) 0%, hsl(262 72% 54%) 45%, hsl(190 80% 42%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(192 95% 29%) 0%, hsl(212 88% 40%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(272 72% 50%) 0%, hsl(230 82% 52%) 100%);
+    --gradient-hero: linear-gradient(140deg, hsl(192 95% 27%) 0%, hsl(226 82% 42%) 48%, hsl(272 72% 46%) 100%);
 
-    --shadow-elevation: 0 1px 2px hsl(224 39% 12% / 0.04), 0 8px 24px -12px hsl(224 39% 12% / 0.18);
-    --shadow-primary: 0 10px 30px -12px hsl(243 75% 56% / 0.45);
-    --shadow-accent: 0 10px 30px -12px hsl(173 80% 36% / 0.4);
+    /* ---- Depth primitives ----
+       --rim-light  top inner edge, where the light hits
+       --hairline   the 1px ring that gives a surface an outline
+       --umbra      the colour shadows are cast in                        */
+    --rim-light: 0 0% 100% / 0.9;
+    --hairline: 246 22% 85% / 0.9;
+    --umbra: 250 45% 24%;
 
-    --chart-1: 243 75% 56%;
-    --chart-2: 173 80% 36%;
-    --chart-3: 35 92% 50%;
-    --chart-4: 205 85% 45%;
-    --chart-5: 330 70% 55%;
+    --elevation-0: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline));
+    --elevation-1: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline)),
+      0 1px 2px -1px hsl(var(--umbra) / 0.16), 0 4px 10px -6px hsl(var(--umbra) / 0.2);
+    --elevation-2: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline)),
+      0 2px 4px -2px hsl(var(--umbra) / 0.18), 0 12px 26px -10px hsl(var(--umbra) / 0.24);
+    --elevation-3: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline)),
+      0 4px 8px -3px hsl(var(--umbra) / 0.2), 0 24px 48px -16px hsl(var(--umbra) / 0.3);
+    --elevation-4: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline)),
+      0 8px 16px -6px hsl(var(--umbra) / 0.22), 0 40px 80px -24px hsl(var(--umbra) / 0.36);
+
+    /* Recessed — for figure frames and code wells, which should read as cut
+       into the surface rather than sitting on it. */
+    --elevation-inset: inset 0 2px 6px -2px hsl(var(--umbra) / 0.14), inset 0 0 0 1px hsl(var(--hairline));
+
+    --glass: 0 0% 100% / 0.72;
+    --glass-border: 246 30% 82% / 0.7;
+
+    --shadow-elevation: var(--elevation-2);
+    --shadow-primary: 0 0 0 1px hsl(var(--primary) / 0.22), 0 12px 32px -12px hsl(var(--primary) / 0.4);
+    --shadow-accent: 0 0 0 1px hsl(var(--accent) / 0.22), 0 12px 32px -12px hsl(var(--accent) / 0.38);
+
+    --chart-1: 192 95% 27%;
+    --chart-2: 272 72% 48%;
+    --chart-3: 26 90% 33%;
+    --chart-4: 205 88% 36%;
+    --chart-5: 330 70% 44%;
 
     --sidebar: 0 0% 100%;
-    --sidebar-foreground: 224 39% 12%;
-    --sidebar-primary: 243 75% 56%;
+    --sidebar-foreground: 250 40% 11%;
+    --sidebar-primary: 192 95% 27%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 95%;
-    --sidebar-accent-foreground: 224 30% 20%;
-    --sidebar-border: 220 16% 88%;
-    --sidebar-ring: 243 75% 56%;
+    --sidebar-accent: 244 26% 94%;
+    --sidebar-accent-foreground: 250 32% 20%;
+    --sidebar-border: 246 20% 88%;
+    --sidebar-ring: 192 95% 27%;
 
     --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-serif: "Lora", ui-serif, Georgia, Cambria, "Times New Roman", serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-    --shadow-2xs: 0 1px 2px 0 hsl(224 39% 12% / 0.04);
-    --shadow-xs: 0 1px 3px 0 hsl(224 39% 12% / 0.06);
-    --shadow-sm: 0 1px 3px 0 hsl(224 39% 12% / 0.08), 0 1px 2px -1px hsl(224 39% 12% / 0.08);
-    --shadow: 0 2px 6px -1px hsl(224 39% 12% / 0.08);
-    --shadow-md: 0 4px 12px -2px hsl(224 39% 12% / 0.1);
-    --shadow-lg: 0 10px 24px -6px hsl(224 39% 12% / 0.12);
-    --shadow-xl: 0 20px 40px -12px hsl(224 39% 12% / 0.16);
-    --shadow-2xl: 0 32px 64px -16px hsl(224 39% 12% / 0.24);
+    --shadow-2xs: 0 1px 2px 0 hsl(var(--umbra) / 0.05);
+    --shadow-xs: 0 1px 3px 0 hsl(var(--umbra) / 0.07);
+    --shadow-sm: var(--elevation-1);
+    --shadow: var(--elevation-1);
+    --shadow-md: var(--elevation-2);
+    --shadow-lg: var(--elevation-3);
+    --shadow-xl: var(--elevation-4);
+    --shadow-2xl: var(--elevation-4);
 
     /* Opacity of the education-themed backdrop. Deliberately low — it must
        never compete with text. */
-    --backdrop-opacity: 0.045;
+    --backdrop-opacity: 0.05;
   }
 
   .dark {
-    --background: 226 36% 7%;
-    --foreground: 220 20% 96%;
+    /* ---- Dark: the primary design target ---- */
+    --background: 252 32% 5%;
+    --foreground: 250 20% 96%;
 
-    --card: 226 30% 11%;
-    --card-foreground: 220 20% 96%;
+    --card: 252 28% 9%;
+    --card-foreground: 250 20% 96%;
 
-    --popover: 226 30% 11%;
-    --popover-foreground: 220 20% 96%;
+    --popover: 252 30% 11%;
+    --popover-foreground: 250 20% 96%;
 
-    --primary: 243 85% 72%;
-    --primary-light: 243 90% 80%;
-    --primary-dark: 243 70% 58%;
-    --primary-foreground: 226 45% 10%;
+    --primary: 187 92% 52%;
+    --primary-light: 187 95% 66%;
+    --primary-dark: 191 90% 38%;
+    --primary-foreground: 196 95% 7%;
 
-    --accent: 172 70% 48%;
-    --accent-light: 172 70% 60%;
-    --accent-foreground: 190 90% 8%;
+    --accent: 272 92% 72%;
+    --accent-light: 272 95% 82%;
+    --accent-foreground: 272 70% 8%;
 
-    --secondary: 226 22% 17%;
-    --secondary-foreground: 220 20% 92%;
+    --secondary: 252 22% 16%;
+    --secondary-foreground: 250 18% 92%;
 
-    --muted: 226 22% 16%;
-    --muted-foreground: 220 14% 68%;
+    --muted: 252 22% 14%;
+    --muted-foreground: 250 16% 68%;
 
-    --success: 152 58% 48%;
-    --success-light: 152 58% 58%;
-    --success-foreground: 150 60% 8%;
+    --success: 152 62% 50%;
+    --success-light: 152 62% 60%;
+    --success-foreground: 152 70% 7%;
 
-    --warning: 38 92% 58%;
-    --warning-light: 42 95% 66%;
-    --warning-foreground: 30 60% 10%;
+    --warning: 38 95% 60%;
+    --warning-light: 42 96% 70%;
+    --warning-foreground: 32 70% 8%;
 
-    --info: 205 85% 62%;
-    --info-light: 205 85% 72%;
-    --info-foreground: 205 70% 10%;
+    --info: 205 90% 62%;
+    --info-light: 205 90% 72%;
+    --info-foreground: 205 75% 8%;
 
-    --destructive: 0 72% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 352 82% 62%;
+    --destructive-foreground: 352 80% 8%;
 
-    --border: 226 20% 22%;
-    --input: 226 20% 22%;
-    --ring: 243 85% 72%;
+    --border: 252 20% 19%;
+    --input: 252 20% 19%;
+    --ring: 187 92% 52%;
 
-    --mastery-none: 226 14% 32%;
-    --mastery-low: 0 70% 62%;
-    --mastery-mid: 38 92% 58%;
-    --mastery-high: 172 65% 52%;
+    --mastery-none: 246 14% 48%;
+    --mastery-low: 352 76% 58%;
+    --mastery-mid: 32 92% 56%;
+    --mastery-high: 84 70% 52%;
     --mastery-full: 152 58% 50%;
+    --ring: 187 92% 52%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(243 85% 68%) 0%, hsl(262 80% 68%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(172 70% 48%) 0%, hsl(190 75% 52%) 100%);
-    --gradient-hero: linear-gradient(140deg, hsl(243 85% 66%) 0%, hsl(262 80% 64%) 45%, hsl(188 78% 50%) 100%);
+    --mastery-none: 252 14% 30%;
+    --mastery-low: 352 82% 64%;
+    --mastery-mid: 38 95% 58%;
+    --mastery-high: 84 68% 54%;
+    --mastery-full: 152 62% 52%;
 
-    --shadow-elevation: 0 1px 2px hsl(0 0% 0% / 0.3), 0 12px 32px -16px hsl(0 0% 0% / 0.7);
-    --shadow-primary: 0 10px 30px -12px hsl(243 85% 66% / 0.5);
-    --shadow-accent: 0 10px 30px -12px hsl(172 70% 48% / 0.45);
+    --gradient-primary: linear-gradient(135deg, hsl(187 92% 54%) 0%, hsl(214 90% 62%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(272 92% 70%) 0%, hsl(228 92% 68%) 100%);
+    --gradient-hero: linear-gradient(140deg, hsl(187 92% 56%) 0%, hsl(222 90% 64%) 48%, hsl(274 92% 72%) 100%);
 
-    --chart-1: 243 85% 72%;
-    --chart-2: 172 70% 52%;
-    --chart-3: 38 92% 60%;
-    --chart-4: 205 85% 64%;
-    --chart-5: 330 75% 68%;
+    --rim-light: 250 60% 96% / 0.08;
+    --hairline: 252 26% 26% / 0.9;
+    --umbra: 256 70% 2%;
 
-    --sidebar: 226 30% 10%;
-    --sidebar-foreground: 220 20% 96%;
-    --sidebar-primary: 243 85% 72%;
-    --sidebar-primary-foreground: 226 45% 10%;
-    --sidebar-accent: 226 22% 17%;
-    --sidebar-accent-foreground: 220 20% 92%;
-    --sidebar-border: 226 20% 22%;
-    --sidebar-ring: 243 85% 72%;
+    --elevation-0: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline));
+    --elevation-1: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline)),
+      0 1px 2px -1px hsl(var(--umbra) / 0.6), 0 4px 12px -6px hsl(var(--umbra) / 0.7);
+    --elevation-2: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline)),
+      0 2px 4px -2px hsl(var(--umbra) / 0.65), 0 14px 30px -10px hsl(var(--umbra) / 0.8);
+    --elevation-3: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline)),
+      0 4px 8px -3px hsl(var(--umbra) / 0.7), 0 28px 56px -16px hsl(var(--umbra) / 0.85);
+    --elevation-4: inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--hairline)),
+      0 8px 16px -6px hsl(var(--umbra) / 0.75), 0 48px 96px -24px hsl(var(--umbra) / 0.9);
 
-    --backdrop-opacity: 0.07;
+    --elevation-inset: inset 0 2px 8px -2px hsl(var(--umbra) / 0.8), inset 0 0 0 1px hsl(var(--hairline));
+
+    --glass: 252 30% 11% / 0.7;
+    --glass-border: 250 40% 60% / 0.16;
+
+    --shadow-elevation: var(--elevation-2);
+    --shadow-primary: 0 0 0 1px hsl(var(--primary) / 0.3), 0 12px 36px -12px hsl(var(--primary) / 0.5);
+    --shadow-accent: 0 0 0 1px hsl(var(--accent) / 0.3), 0 12px 36px -12px hsl(var(--accent) / 0.45);
+
+    --chart-1: 187 92% 56%;
+    --chart-2: 272 92% 72%;
+    --chart-3: 38 95% 60%;
+    --chart-4: 205 90% 64%;
+    --chart-5: 330 85% 68%;
+
+    --sidebar: 252 30% 7%;
+    --sidebar-foreground: 250 20% 96%;
+    --sidebar-primary: 187 92% 52%;
+    --sidebar-primary-foreground: 196 95% 7%;
+    --sidebar-accent: 252 22% 16%;
+    --sidebar-accent-foreground: 250 18% 92%;
+    --sidebar-border: 252 20% 19%;
+    --sidebar-ring: 187 92% 52%;
+
+    --shadow-2xs: 0 1px 2px 0 hsl(var(--umbra) / 0.5);
+    --shadow-xs: 0 1px 3px 0 hsl(var(--umbra) / 0.6);
+
+    --backdrop-opacity: 0.075;
   }
 }
 
@@ -205,28 +277,89 @@
     font-family: var(--font-sans);
   }
 
+  /* The ground is not a flat fill: two soft light sources set up the sense of
+     a lit space before any card is drawn. Fixed, so it never scrolls or
+     reflows. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -20;
+    pointer-events: none;
+    background:
+      radial-gradient(90rem 45rem at 8% -10%, hsl(var(--primary) / 0.12) 0%, transparent 62%),
+      radial-gradient(70rem 40rem at 98% 4%, hsl(var(--accent) / 0.12) 0%, transparent 58%),
+      radial-gradient(60rem 40rem at 50% 110%, hsl(var(--primary) / 0.08) 0%, transparent 60%);
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
   }
 
-  /* Visible focus for keyboard users on every interactive element. */
+  /* Visible focus for keyboard users on every interactive element. Kept as a
+     ring rather than a shadow so it survives every depth treatment below —
+     box-shadow would be overwritten by --elevation-*. */
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
   ::selection {
-    background: hsl(var(--primary) / 0.22);
-  }
-}
-
-@layer components {
-  .surface-card {
-    @apply rounded-2xl border border-border bg-card/80 backdrop-blur-sm;
-    box-shadow: var(--shadow-elevation);
+    background: hsl(var(--primary) / 0.28);
   }
 }
 
 @layer utilities {
+  /* ---- Named surfaces ----
+     These live in `utilities`, not `components`, because `<Card>` ships with
+     `shadow-sm` — a utility. A components-layer `.surface-card` loses to it,
+     so until now every "elevated" card in the app was silently rendering at
+     shadow-sm instead of its intended elevation.
+
+     Source order inside this layer is the whole cascade, and it is deliberate:
+       Tailwind core (shadow-sm)  <  .surface-*  <  .depth-*
+     so a Card picks up `surface-card` over its own base shadow, and an
+     explicit `depth-3` still overrides `surface-card`. Moving `.depth-*` above
+     this block silently pins every surface to one elevation.
+
+     Every rule below stacks the two Tailwind ring variables ahead of its own
+     shadow, exactly as Tailwind's own `shadow-*` utilities do. box-shadow is a
+     single property, so a bare `box-shadow: var(--elevation-2)` does not sit
+     alongside `ring-2` — it erases it, and the focus ring vanishes with no
+     warning. The variables resolve to `0 0 #0000` when no ring is applied, so
+     this costs nothing in the common case. */
+
+  /* The default raised plate. Name kept — used in 98 places across 25 files. */
+  .surface-card {
+    @apply rounded-2xl bg-card;
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+      var(--elevation-2);
+  }
+
+  /* Blurred, translucent — nav bars, sticky headers, overlays. */
+  .surface-glass {
+    @apply rounded-2xl backdrop-blur-xl;
+    background: hsl(var(--glass));
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+      inset 0 1px 0 0 hsl(var(--rim-light)), 0 0 0 1px hsl(var(--glass-border)),
+      0 16px 40px -20px hsl(var(--umbra) / 0.5);
+  }
+
+  /* Cut into the surface rather than sitting on it — figure frames, code
+     wells, anything that should read as embedded. */
+  .surface-sunken {
+    @apply rounded-2xl;
+    background: hsl(var(--muted) / 0.45);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+      var(--elevation-inset);
+  }
+
+  .depth-0 { box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--elevation-0); }
+  .depth-1 { box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--elevation-1); }
+  .depth-2 { box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--elevation-2); }
+  .depth-3 { box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--elevation-3); }
+  .depth-4 { box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--elevation-4); }
+  .depth-inset { box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--elevation-inset); }
+
   .gradient-primary { background-image: var(--gradient-primary); }
   .gradient-accent { background-image: var(--gradient-accent); }
   .gradient-hero { background-image: var(--gradient-hero); }
@@ -238,13 +371,63 @@
     color: transparent;
   }
 
-  .shadow-primary { box-shadow: var(--shadow-primary); }
-  .shadow-accent { box-shadow: var(--shadow-accent); }
-  .shadow-elevation { box-shadow: var(--shadow-elevation); }
+  .shadow-primary { box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--shadow-primary); }
+  .shadow-accent { box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--shadow-accent); }
+  .shadow-elevation { box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--shadow-elevation); }
+
+  /* ---- 3D: CSS depth, used everywhere ----
+     `tilt-scene` establishes the perspective; `tilt-plate` is the thing that
+     rotates. The rotation comes from --tilt-x/--tilt-y, which the Tilt
+     component writes directly to the element's style on pointermove — no React
+     state, so a grid of twenty cards costs zero re-renders. */
+  .tilt-scene {
+    perspective: 1100px;
+    perspective-origin: center;
+  }
+
+  .tilt-plate {
+    transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+      translateZ(var(--tilt-z, 0px)) scale(var(--tilt-scale, 1));
+    transform-style: preserve-3d;
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .tilt-scene:hover .tilt-plate {
+    will-change: transform;
+  }
+
+  /* Specular highlight that follows the pointer across the plate. Decorative
+     only, so it is a pseudo-element and invisible to assistive tech. */
+  .sheen {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 260ms ease-out;
+    background: radial-gradient(
+      36% 36% at var(--pointer-x, 50%) var(--pointer-y, 50%),
+      hsl(0 0% 100% / 0.14) 0%,
+      transparent 72%
+    );
+  }
+
+  .tilt-scene:hover .sheen::after,
+  .tilt-scene:focus-within .sheen::after {
+    opacity: 1;
+  }
 
   .animate-float { animation: eduverse-float 7s ease-in-out infinite; }
   .animate-drift { animation: eduverse-drift 90s linear infinite; }
   .animate-rise { animation: eduverse-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .animate-emerge { animation: eduverse-emerge 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
   @keyframes eduverse-float {
     0%, 100% { transform: translateY(0); }
@@ -261,14 +444,113 @@
     to { opacity: 1; transform: none; }
   }
 
-  /* Respect the OS setting — motion here is decorative, never informative. */
+  /* Arrives from behind the screen plane rather than from below — the one
+     entrance animation that reads as 3D. */
+  @keyframes eduverse-emerge {
+    from { opacity: 0; transform: perspective(1100px) translateZ(-90px) translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* ======================================================================== */
+  /* Registration pages — role-specific visual identity                        */
+  /* ======================================================================== */
+
+  /* Floating decorative icons that drift gently. */
+  @keyframes register-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    33% { transform: translateY(-18px) rotate(6deg); }
+    66% { transform: translateY(8px) rotate(-4deg); }
+  }
+
+  .register-float-icon {
+    animation: register-float 12s ease-in-out infinite;
+    color: currentColor;
+  }
+
+  /* Gradient text for the role-specific headline accent word. */
+  .register-headline-accent {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .register-headline-accent--student {
+    background-image: linear-gradient(135deg, hsl(192 95% 45%), hsl(272 72% 60%));
+  }
+
+  .register-headline-accent--faculty {
+    background-image: linear-gradient(135deg, hsl(152 65% 40%), hsl(192 88% 45%));
+  }
+
+  .register-headline-accent--industry {
+    background-image: linear-gradient(135deg, hsl(26 90% 50%), hsl(352 72% 58%));
+  }
+
+  /* Promise list items: subtle lift on hover. */
+  .register-promise {
+    transition: transform 0.25s ease-out;
+  }
+
+  .register-promise:hover {
+    transform: translateX(6px);
+  }
+
+  /* The giant hero icon behind the pitch panel — slow rotation. */
+  @keyframes register-hero-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .register-hero-icon {
+    animation: register-hero-spin 120s linear infinite;
+  }
+
+  /* Registration card: subtle glow on hover, role-coloured. */
+  .register-card {
+    transition: box-shadow 0.3s ease-out, transform 0.3s ease-out;
+  }
+
+  .register-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px hsl(var(--border) / 0.15),
+      0 20px 60px -12px hsl(0 0% 0% / 0.25);
+  }
+
+  /* Respect the OS setting. Motion here is decorative, never informative, so
+     it is switched off outright rather than slowed down — and the tilt is
+     neutralised at the variable level so no transform survives. */
   @media (prefers-reduced-motion: reduce) {
     .animate-float,
     .animate-drift,
     .animate-rise,
-    .animate-pulse {
+    .animate-emerge,
+    .animate-pulse,
+    .register-float-icon,
+    .register-hero-icon {
       animation: none !important;
     }
+
+    .register-promise:hover {
+      transform: none;
+    }
+
+    .register-card:hover {
+      transform: none;
+    }
+
+    .tilt-plate {
+      --tilt-x: 0deg !important;
+      --tilt-y: 0deg !important;
+      --tilt-z: 0px !important;
+      --tilt-scale: 1 !important;
+      transition: box-shadow 200ms ease-out;
+    }
+
+    .sheen::after {
+      display: none;
+    }
+
     html { scroll-behavior: auto; }
   }
 }

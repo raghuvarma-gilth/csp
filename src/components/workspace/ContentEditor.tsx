@@ -22,8 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { VISUAL_CATALOGUE } from "@/components/visual/catalogue";
+import { Switch } from "@/components/ui/switch";
 import { callFunction, errorMessage, patchJson } from "@/lib/api";
-import type { ContentStatus } from "@/components/workspace/pipeline";
+import { OPPORTUNITY_KIND_LABEL, type ContentStatus } from "@/components/workspace/pipeline";
 
 /**
  * The authoring form.
@@ -44,7 +45,14 @@ import type { ContentStatus } from "@/components/workspace/pipeline";
  *    form is a convenience, not a permission boundary.
  */
 
-export type ContentKind = "course" | "chapter" | "concept" | "problem" | "research";
+export type ContentKind =
+  | "course"
+  | "chapter"
+  | "concept"
+  | "problem"
+  | "research"
+  | "announcement"
+  | "opportunity";
 
 export interface ContentRow {
   id: string;
@@ -63,7 +71,18 @@ export interface ParentOption {
   group?: string;
 }
 
-type FieldType = "text" | "textarea" | "code" | "number" | "select" | "json" | "parent";
+type FieldType =
+  | "text"
+  | "textarea"
+  | "code"
+  | "number"
+  | "select"
+  | "json"
+  | "parent"
+  | "date"
+  | "datetime"
+  | "boolean"
+  | "list";
 
 interface Field {
   name: string;
@@ -86,6 +105,8 @@ export const KIND_LABEL: Record<ContentKind, string> = {
   concept: "Concept",
   problem: "Coding problem",
   research: "Research item",
+  announcement: "Announcement",
+  opportunity: "Opportunity",
 };
 
 /** Which list a kind's reference field is chosen from. */
@@ -94,6 +115,8 @@ export const PARENT_OF: Partial<Record<ContentKind, ContentKind>> = {
   concept: "chapter",
   problem: "concept",
   research: "concept",
+  announcement: "course",
+  opportunity: "concept",
 };
 
 const SLUG_HINT = "Lowercase letters, numbers and hyphens. It becomes part of the URL.";
@@ -143,7 +166,14 @@ export const FIELDS: Record<ContentKind, Field[]> = {
       hint: "Links this concept to a DSA visualiser. Only keys with a built visualisation are listed.",
       options: [
         { value: "", label: "None" },
-        ...VISUAL_CATALOGUE.map((entry) => ({ value: entry.key, label: entry.title })),
+        /* The list is long enough now that bare titles are ambiguous — "Build",
+           "Search" and "Insert" recur across structures. The group prefix is the
+           same idiom the parent select below uses. A flat shadcn `Select` has no
+           optgroup, so the prefix is the grouping. */
+        ...VISUAL_CATALOGUE.map((entry) => ({
+          value: entry.key,
+          label: `${entry.group} · ${entry.title}`,
+        })),
       ],
     },
     { name: "position", label: "Order", type: "number", min: 0 },
@@ -238,12 +268,128 @@ export const FIELDS: Record<ContentKind, Field[]> = {
       hint: "A JSON array. Anything you assert should be traceable to one of these.",
     },
   ],
+  announcement: [
+    {
+      name: "course_id",
+      label: "Course",
+      type: "parent",
+      hint: "Leave empty if this is for everyone rather than one course.",
+    },
+    { name: "title", label: "Title", type: "text", requiredOnCreate: true },
+    {
+      name: "body",
+      label: "Announcement",
+      type: "textarea",
+      rows: 8,
+      requiredOnCreate: true,
+      hint: "Markdown. Raw HTML is not rendered.",
+    },
+    {
+      name: "pinned",
+      label: "Pin to the top",
+      type: "boolean",
+      hint: "Pinned notices sort above the rest for as long as they are live.",
+    },
+    {
+      name: "expires_at",
+      label: "Stop showing after",
+      type: "datetime",
+      hint: "Optional. Past this moment students stop seeing it — a reminder for a date that has gone is worse than no reminder.",
+    },
+  ],
+  opportunity: [
+    {
+      name: "kind",
+      label: "Kind",
+      type: "select",
+      requiredOnCreate: true,
+      options: Object.entries(OPPORTUNITY_KIND_LABEL).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    },
+    { name: "title", label: "Title", type: "text", requiredOnCreate: true },
+    {
+      name: "organisation",
+      label: "Organisation",
+      type: "text",
+      requiredOnCreate: true,
+      placeholder: "Who is offering this",
+    },
+    {
+      name: "organisation_url",
+      label: "Organisation website",
+      type: "text",
+      placeholder: "https://…",
+      hint: "Must start with http:// or https://.",
+    },
+    {
+      name: "description",
+      label: "Description",
+      type: "textarea",
+      rows: 8,
+      writeOnly: true,
+      requiredOnCreate: true,
+      hint: "Markdown. What the work is, who it suits, what happens next.",
+    },
+    {
+      name: "location",
+      label: "Location",
+      type: "text",
+      placeholder: "Remote · Bengaluru · Hybrid",
+    },
+    {
+      name: "apply_url",
+      label: "Where to apply",
+      type: "text",
+      placeholder: "https://…",
+      hint: "Must start with http:// or https://. Students click this, so the database refuses anything else.",
+    },
+    {
+      name: "deadline",
+      label: "Closing date",
+      type: "date",
+      hint: "Optional. Once it passes, the listing drops off the student dashboard rather than padding a count.",
+    },
+    {
+      name: "skills",
+      label: "Skills asked for",
+      type: "list",
+      placeholder: "Python, SQL, Git",
+      hint: "Comma separated.",
+    },
+    {
+      name: "concept_id",
+      label: "Related concept",
+      type: "parent",
+      hint: "Optional. Links the posting to the curriculum it draws on.",
+    },
+  ],
+};
+
+/**
+ * `<input type="datetime-local">` only speaks "YYYY-MM-DDTHH:mm", and only in
+ * the browser's own timezone. Converting here and back on submit means the
+ * author picks a wall-clock time and the database stores the instant it meant.
+ */
+const toLocalInput = (iso: string): string => {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return (
+    `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}` +
+    `T${pad(at.getHours())}:${pad(at.getMinutes())}`
+  );
 };
 
 const initialValue = (field: Field, item: ContentRow | null): string => {
   if (!item || field.writeOnly) return "";
   const raw = item[field.name];
   if (raw === null || raw === undefined) return "";
+  if (field.type === "list") return Array.isArray(raw) ? raw.join(", ") : String(raw);
+  if (field.type === "boolean") return raw ? "true" : "false";
+  if (field.type === "datetime") return toLocalInput(String(raw));
+  if (field.type === "date") return String(raw).slice(0, 10);
   if (typeof raw === "object") return JSON.stringify(raw, null, 2);
   return String(raw);
 };
@@ -316,8 +462,35 @@ export const ContentEditor = ({
       if (raw === (initial[field.name] ?? "")) continue;
 
       if (!raw) {
-        // An emptied optional field is a real change: send null.
-        payload[field.name] = null;
+        /* An emptied optional field is a real change: send null. The two
+           NOT NULL columns with defaults are the exception — an empty skills
+           box means no skills, not a constraint violation. */
+        if (field.type === "list") payload[field.name] = [];
+        else if (field.type === "boolean") payload[field.name] = false;
+        else payload[field.name] = null;
+        continue;
+      }
+
+      if (field.type === "boolean") {
+        payload[field.name] = raw === "true";
+        continue;
+      }
+
+      if (field.type === "list") {
+        payload[field.name] = raw
+          .split(",")
+          .map((entry) => entry.trim())
+          .filter(Boolean);
+        continue;
+      }
+
+      if (field.type === "datetime") {
+        const at = new Date(raw);
+        if (Number.isNaN(at.getTime())) {
+          setProblem(`${field.label} is not a valid date and time.`);
+          return;
+        }
+        payload[field.name] = at.toISOString();
         continue;
       }
 
@@ -428,6 +601,25 @@ export const ContentEditor = ({
                       ))}
                     </SelectContent>
                   </Select>
+                ) : field.type === "boolean" ? (
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id={id}
+                      checked={value === "true"}
+                      onCheckedChange={(next) => setValue(next ? "true" : "false")}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {value === "true" ? "Yes" : "No"}
+                    </span>
+                  </div>
+                ) : field.type === "date" || field.type === "datetime" ? (
+                  <Input
+                    id={id}
+                    type={field.type === "date" ? "date" : "datetime-local"}
+                    value={value}
+                    onChange={(event) => setValue(event.target.value)}
+                    className="w-auto"
+                  />
                 ) : field.type === "number" ? (
                   <Input
                     id={id}

@@ -1,1 +1,1 @@
-"""External services: Gemini, Hugging Face embeddings, decay maths, code execution."""
+"""External services: AI chat (Gemini / Grok), Hugging Face embeddings, decay maths, code execution."""

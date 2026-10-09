@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 from ..auth import CurrentUserDep
 from ..db import admin_db
 from ..errors import PublicError
-from ..services import gemini
+from ..services import ai as gemini
 
 router = APIRouter(tags=["diagnostic"])
 

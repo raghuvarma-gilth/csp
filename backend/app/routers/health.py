@@ -15,7 +15,7 @@ from fastapi import APIRouter
 
 from .. import __version__
 from ..config import settings
-from ..services import sandbox
+from ..services import ai, sandbox
 
 router = APIRouter(tags=["health"])
 
@@ -26,10 +26,10 @@ async def health() -> dict[str, Any]:
 
     features = {
         "database": settings.supabase_configured,
-        "tutor": settings.gemini_configured,
-        "quizzes": settings.gemini_configured,
-        "diagnostic": settings.gemini_configured,
-        "codeMentor": settings.gemini_configured,
+        "tutor": settings.ai_configured,
+        "quizzes": settings.ai_configured,
+        "diagnostic": settings.ai_configured,
+        "codeMentor": settings.ai_configured,
         "codeExecution": bool(runnable),
         "retrieval": settings.embeddings_configured,
     }
@@ -37,10 +37,17 @@ async def health() -> dict[str, Any]:
     missing: list[str] = []
     if not settings.supabase_configured:
         missing.append("SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY")
-    if not settings.gemini_configured:
-        missing.append("GEMINI_API_KEY")
+    if not settings.ai_configured:
+        missing.append("GEMINI_API_KEY or GROK_API_KEY (at least one)")
     if not settings.embeddings_configured:
         missing.append("HUGGINGFACE_API_KEY")
+
+    active_provider = ai.provider_name()
+    chat_model = None
+    if active_provider == "gemini":
+        chat_model = settings.gemini_model
+    elif active_provider == "grok":
+        chat_model = settings.grok_model
 
     return {
         "status": "ok" if all(features.values()) else "degraded",
@@ -48,7 +55,8 @@ async def health() -> dict[str, Any]:
         "features": features,
         "runnableLanguages": runnable,
         "models": {
-            "chat": settings.gemini_model if settings.gemini_configured else None,
+            "chat": chat_model,
+            "chatProvider": active_provider,
             "embeddings": settings.embedding_model if settings.embeddings_configured else None,
         },
         "missingConfiguration": missing,

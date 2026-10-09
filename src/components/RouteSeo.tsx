@@ -16,7 +16,7 @@ import { useLocation } from "react-router-dom";
  * preview site, quietly handing it the search ranking.
  */
 
-const SITE_URL = (import.meta.env.VITE_SITE_URL ?? "https://eduverse-ai-by-yasar.lovable.app").replace(/\/+$/, "");
+const SITE_URL = (import.meta.env.VITE_SITE_URL ?? "https://eduverse.example.com").replace(/\/+$/, "");
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 type RouteMeta = {
@@ -52,7 +52,25 @@ const routeMeta: Record<string, RouteMeta> = {
   "/auth": {
     title: "Sign in — EduVerse",
     description:
-      "Sign in or create an EduVerse account to keep your concept mastery, roadmap and practice history in sync.",
+      "Sign in to EduVerse to keep your concept mastery, roadmap and practice history in sync.",
+  },
+  /* The three registration forms are listed individually because `routeMeta` is
+     keyed by exact pathname — an unlisted path falls through to `fallback`, which
+     carries `noindex`, and these three are public pages that should be findable. */
+  "/register": {
+    title: "Create a student account — EduVerse",
+    description:
+      "Create a free EduVerse student account. Your first diagnostic sets up a personalised learning path in minutes.",
+  },
+  "/register/faculty": {
+    title: "Register as a professor or teacher — EduVerse",
+    description:
+      "Register as EduVerse faculty to author course material. Requests are reviewed by an administrator before contributor access is granted.",
+  },
+  "/register/industry": {
+    title: "Register as an industry professional — EduVerse",
+    description:
+      "Register as an EduVerse industry contributor and add real-world applications, case studies and worked code alongside the curriculum.",
   },
 };
 

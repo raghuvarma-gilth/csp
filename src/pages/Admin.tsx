@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { ROLE_NAME, type AppRole, type RequestableRole } from "@/hooks/useUserRole";
 import { PageHeader, StatTile } from "@/components/learning/primitives";
 import { ConfigNotice, EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { apiTarget, callFunction, errorMessage, getJson } from "@/lib/api";
@@ -34,6 +35,12 @@ import { apiTarget, callFunction, errorMessage, getJson } from "@/lib/api";
  * Administrator is not in the list of grantable roles. It is created out of
  * band, by someone with database access, and nothing in this application can
  * mint one.
+ *
+ * Requests reach this queue from two places: /request-access, and the register
+ * form's "I am joining as" picker, which the signup trigger converts into a
+ * pending request. Neither is verified. A request opened at signup says so in
+ * its own justification text, because the difference matters to whoever is about
+ * to approve it.
  */
 
 type RequestStatus = "pending" | "approved" | "rejected";
@@ -41,7 +48,7 @@ type RequestStatus = "pending" | "approved" | "rejected";
 interface RoleRequest {
   id: string;
   user_id: string;
-  requested_role: "faculty" | "research_expert";
+  requested_role: RequestableRole;
   justification: string;
   institution: string | null;
   status: RequestStatus;
@@ -58,16 +65,15 @@ interface PersonRow {
   roles: string[];
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  student: "Student",
-  faculty: "Faculty",
-  research_expert: "Research expert",
-  admin: "Administrator",
-};
+/* The API returns roles as plain strings — it reads whatever is in `user_roles`,
+   not a TypeScript union — so fall back to the raw value rather than rendering
+   "undefined" if the database ever grows a label this build does not know. */
+const roleLabel = (role: string) => ROLE_NAME[role as AppRole] ?? role;
 
 const ROLE_BADGE: Record<string, string> = {
   faculty: "border-primary/40 bg-primary/10 text-primary",
   research_expert: "border-info/40 bg-info/10 text-info",
+  industry_expert: "border-accent/40 bg-accent/10 text-accent",
   admin: "border-warning/40 bg-warning/10 text-warning",
 };
 
@@ -131,7 +137,7 @@ const Admin = () => {
         description="Approving a request is the only way a role is granted in EduVerse. Nothing on this screen can grant an administrator."
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatTile
           label="People"
           value={people.data ? String(staff.length) : "—"}
@@ -142,6 +148,10 @@ const Admin = () => {
         <StatTile
           label="Research experts"
           value={people.data ? String(roleCount("research_expert")) : "—"}
+        />
+        <StatTile
+          label="Industry"
+          value={people.data ? String(roleCount("industry_expert")) : "—"}
         />
         <StatTile
           label="Administrators"
@@ -213,7 +223,7 @@ const Admin = () => {
                             variant="outline"
                             className={`text-[10px] ${ROLE_BADGE[row.requested_role] ?? ""}`}
                           >
-                            wants {ROLE_LABEL[row.requested_role]}
+                            wants {roleLabel(row.requested_role)}
                           </Badge>
                         </div>
                         <p className="mt-0.5 text-xs text-muted-foreground">
@@ -267,7 +277,7 @@ const Admin = () => {
                               }
                             >
                               <Check className="mr-2 h-3.5 w-3.5" aria-hidden />
-                              {busy ? "Working…" : `Grant ${ROLE_LABEL[row.requested_role]}`}
+                              {busy ? "Working…" : `Grant ${roleLabel(row.requested_role)}`}
                             </Button>
                             <Button
                               size="sm"
@@ -365,7 +375,7 @@ const Admin = () => {
                                 variant="outline"
                                 className={`text-[10px] ${ROLE_BADGE[role] ?? ""}`}
                               >
-                                {ROLE_LABEL[role] ?? role}
+                                {roleLabel(role)}
                               </Badge>
                             ))
                           )}

@@ -26,6 +26,18 @@ export interface MasteryRecord {
   total_time_seconds: number;
 }
 
+/**
+ * The bar for "I can do this" — the threshold a course or module counts a
+ * concept as confident at.
+ *
+ * Deliberately below the 85% that earns `mastered`: progress rings count what
+ * a student can already use, and holding them to the mastery bar would show a
+ * course as untouched while they were most of the way through it. Defined here
+ * because Learn and Home both draw rings over the same courses, and two local
+ * copies of 60 would eventually disagree about the same course.
+ */
+export const CONFIDENT_MASTERY = 60;
+
 export const MASTERY_BANDS = [
   { min: 85, key: "full", label: "Mastered", className: "bg-mastery-full", text: "text-mastery-full" },
   { min: 70, key: "high", label: "Strong", className: "bg-mastery-high", text: "text-mastery-high" },

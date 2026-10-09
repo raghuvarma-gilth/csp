@@ -1,16 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  AlertTriangle,
-  Brain,
-  CalendarDays,
-  Flame,
-  Info,
-  Target,
-  Timer,
-  TrendingDown,
-} from "lucide-react";
+import { AlertTriangle, CalendarDays, Info, Route } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurriculum, useMastery, useMisconceptions, useStreak } from "@/hooks/useLearning";
-import { PageHeader, StatTile, MasteryBar } from "@/components/learning/primitives";
+import { METRIC_ICON, PageHeader, StatTile, MasteryBar } from "@/components/learning/primitives";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import {
   daysSince,
@@ -209,7 +200,7 @@ const ProgressPage = () => {
         actions={
           <Button asChild variant="outline">
             <Link to="/roadmap">
-              <Target className="mr-2 h-4 w-4" aria-hidden />
+              <Route className="mr-2 h-4 w-4" aria-hidden />
               What to do next
             </Link>
           </Button>
@@ -220,7 +211,7 @@ const ProgressPage = () => {
         <Card className="surface-card">
           <CardContent className="p-0">
             <EmptyState
-              icon={<Brain className="h-8 w-8" aria-hidden />}
+              icon={<METRIC_ICON.measured className="h-8 w-8" aria-hidden />}
               title="Nothing measured yet"
               description="This page fills in from real answers. The fastest way to start it is the placement check — ten questions and every tile below gets a real value."
               action={
@@ -237,27 +228,27 @@ const ProgressPage = () => {
             label="Concepts measured"
             value={`${stats!.measured} / ${stats!.total}`}
             hint="attempted at least once"
-            icon={<Brain className="h-4 w-4" aria-hidden />}
+            icon={<METRIC_ICON.measured className="h-4 w-4" aria-hidden />}
           />
           <StatTile
             label="Mastered"
             value={String(stats!.mastered)}
             hint="85% or above"
-            icon={<Target className="h-4 w-4" aria-hidden />}
+            icon={<METRIC_ICON.mastered className="h-4 w-4" aria-hidden />}
             tone={stats!.mastered > 0 ? "primary" : undefined}
           />
           <StatTile
             label="Needs review"
             value={String(stats!.needsReview)}
             hint="fading since last practised"
-            icon={<TrendingDown className="h-4 w-4" aria-hidden />}
+            icon={<METRIC_ICON.slipping className="h-4 w-4" aria-hidden />}
             tone={stats!.needsReview > 0 ? "warning" : undefined}
           />
           <StatTile
             label="Time on concepts"
             value={formatMinutes(stats!.totalSeconds)}
             hint="recorded across attempts"
-            icon={<Timer className="h-4 w-4" aria-hidden />}
+            icon={<METRIC_ICON.time className="h-4 w-4" aria-hidden />}
           />
           <StatTile
             label="Streak"
@@ -267,7 +258,7 @@ const ProgressPage = () => {
                 ? `longest ${streak.data.longest_streak} · ${streak.data.total_active_days} active days`
                 : "no activity recorded yet"
             }
-            icon={<Flame className="h-4 w-4" aria-hidden />}
+            icon={<METRIC_ICON.streak className="h-4 w-4" aria-hidden />}
           />
         </div>
       )}

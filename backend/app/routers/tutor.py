@@ -22,7 +22,7 @@ from ..auth import CurrentUserDep
 from ..config import settings
 from ..db import admin_db
 from ..errors import PublicError
-from ..services import embeddings, gemini
+from ..services import embeddings, ai as gemini
 
 router = APIRouter(tags=["tutor"])
 

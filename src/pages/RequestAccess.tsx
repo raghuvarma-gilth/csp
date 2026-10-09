@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useUserRole, ROLE_NAME, type RequestableRole } from "@/hooks/useUserRole";
 import { PageHeader } from "@/components/learning/primitives";
 import { LoadingState } from "@/components/states";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,11 @@ import { cn } from "@/lib/utils";
  * Administrator is deliberately absent from the list below. Admin is granted
  * out-of-band, by an existing administrator, and there is no request path to it
  * at all.
+ *
+ * Someone who registered at `/register/faculty` or `/register/industry` already
+ * has a pending row here, opened by the signup trigger, and will land on the
+ * awaiting-review card rather than the form. That is the same queue and the same
+ * review; those two forms are just another door into it.
  */
 
 const OPTIONS = [
@@ -40,6 +45,12 @@ const OPTIONS = [
     description:
       "Review material other people submitted and approve or return it. You will not be able to review anything you authored yourself.",
   },
+  {
+    value: "industry_expert" as const,
+    title: "Industry professional",
+    description:
+      "Contribute real-world applications, case studies and worked code alongside the curriculum. Faculty review it before students see it, and it carries no review or publishing authority of its own.",
+  },
 ];
 
 const MIN_JUSTIFICATION = 20;
@@ -47,7 +58,7 @@ const MIN_JUSTIFICATION = 20;
 const RequestAccess = () => {
   const { role, request, isLoading, submitRoleRequest } = useUserRole();
 
-  const [requestedRole, setRequestedRole] = useState<"faculty" | "research_expert">("faculty");
+  const [requestedRole, setRequestedRole] = useState<RequestableRole>("faculty");
   const [justification, setJustification] = useState("");
   const [institution, setInstitution] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +90,7 @@ const RequestAccess = () => {
           <CardContent className="space-y-3 p-4">
             <p className="flex items-center gap-2 text-sm">
               <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
-              Your account is {role === "research_expert" ? "a research expert" : role} account.
+              Your account is {ROLE_NAME[role].toLowerCase()} level.
             </p>
             <div className="flex flex-wrap gap-2">
               {(role === "faculty" || role === "admin") && (
@@ -87,9 +98,9 @@ const RequestAccess = () => {
                   <Link to="/faculty">Faculty workspace</Link>
                 </Button>
               )}
-              {(role === "research_expert" || role === "admin") && (
+              {(role === "research_expert" || role === "industry_expert" || role === "admin") && (
                 <Button asChild size="sm" variant="outline">
-                  <Link to="/research">Review queue</Link>
+                  <Link to="/research">Contribution workspace</Link>
                 </Button>
               )}
               {role === "admin" && (
@@ -110,7 +121,7 @@ const RequestAccess = () => {
     <div className="mx-auto max-w-2xl space-y-5">
       <PageHeader
         eyebrow="Access"
-        title="Request faculty or reviewer access"
+        title="Request contributor access"
         description="Tell us who you are and what you intend to publish. An administrator reads every request before anything changes."
       />
 
@@ -129,7 +140,7 @@ const RequestAccess = () => {
             <CardContent className="space-y-1 text-xs text-muted-foreground">
               <p>
                 <Badge variant="outline" className="mr-1.5 text-[10px]">
-                  {request.requested_role === "research_expert" ? "Research expert" : "Faculty"}
+                  {ROLE_NAME[request.requested_role]}
                 </Badge>
                 submitted {new Date(request.created_at).toLocaleDateString()}
               </p>
@@ -196,7 +207,7 @@ const RequestAccess = () => {
                   value={institution}
                   onChange={(event) => setInstitution(event.target.value)}
                   maxLength={120}
-                  placeholder="Where you teach or research"
+                  placeholder="Where you teach, research or work"
                 />
               </div>
 
