@@ -23,8 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Secrets. The root .env holds the Supabase service-role key and the Gemini and
-# Hugging Face API keys — none of which may ever be committed.
+# Secrets. backend/.env holds the Supabase service-role key and the Gemini and
+# Hugging Face API keys; the root .env holds the public VITE_* values. Neither
+# may ever be committed.
 .env
 .env.*
 !.env.example
